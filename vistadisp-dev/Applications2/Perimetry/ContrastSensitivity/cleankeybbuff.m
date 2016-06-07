@@ -1,1 +1,0 @@
-	%clean keyboard buffer before showing stimulus 	% April 4 ,2004	% Claudio	Pressed=1;	while ( Pressed ==1)	Pressed=Charavail;     if(Pressed==1)		getchar;     end    end

@@ -1,1 +1,0 @@
-function  bigcross(display,width)screen(display.windowPtr,'drawline',1,1,1,display.numPixels(1),display.numPixels(2),width,width);screen(display.windowPtr,'drawline',1,display.numPixels(1),1,1,display.numPixels(2),width,width);
