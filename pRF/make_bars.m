@@ -30,7 +30,7 @@ function [images,stimulus,params] = make_bars(imFile,paramsFile,params)
 
 %% Set defaults (for 3T Prisma at UPenn)
 if ~exist('params','var')
-    params.screendims               = [69.85 39.37]; % cm  
+    params.screendims               = [69.85 39.29]; % cm  
     params.resolution               = [1920 1080];
     params.distance                 = 106.5; % cm 
     params.step_nx                  = 16; % number of steps per one bar sweep
@@ -55,7 +55,7 @@ maxCmapVal      = max([params.stimRgbRange]);       % [0 255])
 display.resolution  = params.resolution;            % [1920 1080]
 display.distance    = params.distance;              % 106.5
 display.width       = params.screendims(1);         % 69.85
-display.height      = params.screendims(2);         % 69.85
+display.height      = params.screendims(2);         % 39.29
 outerRad            = 0.5*params.propScreen * (pix2angle(display,display.resolution(2),'height'));
 ringWidth           = outerRad / params.ringsize;
 if isfield(params, 'contrast')
