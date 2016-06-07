@@ -132,19 +132,18 @@ sweep = 1:params.numImages;
 blank = ones(1,length(sweep)/2)*blankInd; % make a 'blank' bar sweep
 % Make a single cycle through the images
 tmpseq = [...
+    1*length(sweep) + sweep ...         % diagonal (up-left)
+    sweep ...                           % vertical (left-right)
     blank ...
-    fliplr(1*length(sweep) + sweep) ... % diagonal (down)
-    fliplr(sweep) ...                   % vertical 
-    blank ...
-    fliplr(3*length(sweep) + sweep) ... % diagonal (down)
-    fliplr(2*length(sweep) + sweep) ... % horizontal (up)
-    blank ...
-    1*length(sweep) + sweep ...         % diagonal (up)
-    sweep ...                           % vertical
-    blank ...
-    3*length(sweep) + sweep ...         % diagonal (up)
+    3*length(sweep) + sweep ...         % diagonal (up-right)
     2*length(sweep) + sweep ...         % horizontal (down)
-    ];
+    blank ...
+    fliplr(1*length(sweep) + sweep) ... % diagonal (down-right)
+    fliplr(sweep) ...                   % vertical (right-left)
+    blank ...
+    fliplr(3*length(sweep) + sweep) ... % diagonal (down-left)
+    fliplr(2*length(sweep) + sweep) ... % horizontal (up)
+    blank];
 % Repeat the image cycle by 'params.numReps'
 stimulus.seq = repmat(tmpseq,[1,params.numReps]);
 imagesFull = images(:,:,stimulus.seq);
