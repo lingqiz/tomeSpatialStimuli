@@ -1,10 +1,10 @@
-function [images,stimulus,params] = make_bars(imFile,paramsFile,params)
+function [imagesFull,images,stimulus,params] = make_bars(outFile,params)
 
 %% Makes drifting bar stimuli for pRF mapping.
 %   Expected to be used in conjuction with play_pRF_movie
 %
 %   Usage:
-%   [images,stimulus,params] = make_bars(imFile,paramsFile,params)
+%   [imagesFull,images,stimulus,params] = make_bars(outFile,params)
 %
 %   Example:
 %   imFile      = '/path/to/some/dir/imFile.mat'; % output image file
@@ -12,9 +12,7 @@ function [images,stimulus,params] = make_bars(imFile,paramsFile,params)
 %   [images,stimulus,params] = make_bars(imFile,paramsFile);
 %
 %   defaults:
-%     params.screendims               = [69.85 39.37]; % cm  
 %     params.resolution               = [1920 1080];
-%     params.distance                 = 106.5; % cm 
 %     params.step_nx                  = 16; % number of steps per one bar sweep
 %     params.propScreen               = 1; % proportion of screen height (1 = full height of screen)
 %     params.ringsize                 = 4; % proportion of screen radius (4 = 1/4 of radius)
@@ -30,9 +28,7 @@ function [images,stimulus,params] = make_bars(imFile,paramsFile,params)
 
 %% Set defaults (for 3T Prisma at UPenn)
 if ~exist('params','var')
-    params.screendims               = [69.85 39.29]; % cm  
     params.resolution               = [1920 1080];
-    params.distance                 = 106.5; % cm 
     params.step_nx                  = 16; % number of steps per one bar sweep
     params.propScreen               = 1; % proportion of screen height (1 = full height of screen)
     params.ringsize                 = 4; % proportion of screen radius (4 = 1/4 of radius)
@@ -52,11 +48,7 @@ numSubRings     = params.numSubRings;               % 1
 bk              = params.display.backColorIndex;    % 128
 minCmapVal      = min([params.stimRgbRange]);       % [0 255])
 maxCmapVal      = max([params.stimRgbRange]);       % [0 255])
-display.resolution  = params.resolution;            % [1920 1080]
-display.distance    = params.distance;              % 106.5
-display.width       = params.screendims(1);         % 69.85
-display.height      = params.screendims(2);         % 39.29
-outerRad            = 0.5*params.propScreen * (pix2angle(display,display.resolution(2),'height'));
+outerRad            = 0.5*params.propScreen * (params.resolution(2));
 ringWidth           = outerRad / params.ringsize;
 if isfield(params, 'contrast')
     c = params.contrast;
@@ -66,8 +58,8 @@ if isfield(params, 'contrast')
 end
 %% Initialize image template %%
 disp('Creating images...');
-m = round(angle2pix(display, 2*outerRad,'height'));
-n = round(angle2pix(display, 2*outerRad,'width'));
+m = 2*outerRad;% height;
+n = 2*outerRad; % width;
 [x,y]=meshgrid(linspace(-outerRad,outerRad,n),linspace(outerRad,-outerRad,m));
 % here we crop the image if it is larger than the screen
 % seems that you have to have a square matrix, bug either in my or
@@ -94,7 +86,7 @@ original_y      = y;
 step_x          = ((2*outerRad) - ringWidth/2) ./ step_nx;
 step_startx     = -outerRad;%(step_nx-1)./2.*-step_x - (ringWidth./2);
 % Loop that creates the one cycle images
-tmpImages=zeros(m,n,halfNumImages*params.motionSteps,'uint8');
+images=zeros(m,n,halfNumImages*params.motionSteps,'uint8');
 for imgNum=1:halfNumImages
     if remake_xy(imgNum) >=0
         x = original_x .* cos(remake_xy(imgNum)) - original_y .* sin(remake_xy(imgNum));
@@ -129,37 +121,36 @@ for imgNum=1:halfNumImages
     window = tmpvar == 1;
     img         = bk*ones(size(checks));
     img(window) = checks(window);
-    tmpImages(:,:,(imgNum-1).*numMotSteps+1:imgNum.*numMotSteps) = uint8(img);
+    images(:,:,(imgNum-1)*numMotSteps+1:imgNum*numMotSteps) = uint8(img);
 end
 %% insert blank image
-blankImage = uint8(ones(size(tmpImages,1),size(tmpImages,2)).*bk);
-blankInd  = size(tmpImages,3)+1;
-tmpImages(:,:,blankInd)   = blankImage;
-%% Create final images
+blankImage = uint8(ones(size(images,1),size(images,2)).*bk);
+blankInd  = size(images,3)+1;
+images(:,:,blankInd)   = blankImage;
+%% Create final sequence
 sweep = 1:params.numImages;
 blank = ones(1,length(sweep)/2)*blankInd; % make a 'blank' bar sweep
 % Make a single cycle through the images
 tmpseq = [...
-2*length(sweep) + sweep ...
-blank ...
-fliplr(1*length(sweep) + sweep) ...
-fliplr(sweep) ...
-blank ...
-fliplr(3*length(sweep) + sweep) ...
-fliplr(2*length(sweep) + sweep) ...
-blank ...
-1*length(sweep) + sweep ...
-sweep ...
-blank ...
-3*length(sweep) + sweep ...
-];
+    blank ...
+    fliplr(1*length(sweep) + sweep) ... % diagonal (down)
+    fliplr(sweep) ...                   % vertical 
+    blank ...
+    fliplr(3*length(sweep) + sweep) ... % diagonal (down)
+    fliplr(2*length(sweep) + sweep) ... % horizontal (up)
+    blank ...
+    1*length(sweep) + sweep ...         % diagonal (up)
+    sweep ...                           % vertical
+    blank ...
+    3*length(sweep) + sweep ...         % diagonal (up)
+    2*length(sweep) + sweep ...         % horizontal (down)
+    ];
 % Repeat the image cycle by 'params.numReps'
 stimulus.seq = repmat(tmpseq,[1,params.numReps]);
-images = tmpImages(:,:,stimulus.seq);
+imagesFull = images(:,:,stimulus.seq);
 % stimulus timing
 totalDur = (length(stimulus.seq) / params.motionSteps) * params.TR; % 8 frames / TR
 stimulus.seqtiming = linspace(0,totalDur - (totalDur/length(stimulus.seq)),length(stimulus.seq));
 disp('done.');
 %% Save image and params files
-save(imFile,'images');
-svae(paramsFile,'params');
+save(outFile,'images','stimulus','params');
