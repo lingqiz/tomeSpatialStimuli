@@ -1,10 +1,15 @@
-function [images,stimulus,params] = make_bars(params,imFile,paramsFile)
+function [images,stimulus,params] = make_bars(imFile,paramsFile,params)
 
 %% Makes drifting bar stimuli for pRF mapping.
 %   Expected to be used in conjuction with play_pRF_movie
 %
 %   Usage:
-%   [finalimages,images] = make_bars(params)
+%   [images,stimulus,params] = make_bars(imFile,paramsFile,params)
+%
+%   Example:
+%   imFile      = '/path/to/some/dir/imFile.mat'; % output image file
+%   paramsFile  = '/path/to/some/dir/paramsFile.mat'; % output params file
+%   [images,stimulus,params] = make_bars(imFile,paramsFile);
 %
 %   defaults:
 %     params.screendims               = [69.85 39.37]; % cm  
