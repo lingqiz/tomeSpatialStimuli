@@ -13,7 +13,7 @@ function [images,stimulus,params] = make_bars(imFile,paramsFile,params)
 %
 %   defaults:
 %     params.screendims               = [69.85 39.37]; % cm  
-%     params.resolution               = [1920 1200];
+%     params.resolution               = [1920 1080];
 %     params.distance                 = 106.5; % cm 
 %     params.step_nx                  = 16; % number of steps per one bar sweep
 %     params.propScreen               = 1; % proportion of screen height (1 = full height of screen)
@@ -31,7 +31,7 @@ function [images,stimulus,params] = make_bars(imFile,paramsFile,params)
 %% Set defaults (for 3T Prisma at UPenn)
 if ~exist('params','var')
     params.screendims               = [69.85 39.37]; % cm  
-    params.resolution               = [1920 1200];
+    params.resolution               = [1920 1080];
     params.distance                 = 106.5; % cm 
     params.step_nx                  = 16; % number of steps per one bar sweep
     params.propScreen               = 1; % proportion of screen height (1 = full height of screen)
