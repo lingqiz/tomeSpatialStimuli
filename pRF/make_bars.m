@@ -1,15 +1,14 @@
 function [imagesFull,images,stimulus,params] = make_bars(outFile,params)
 
 %% Makes drifting bar stimuli for pRF mapping.
-%   Expected to be used in conjuction with play_pRF_movie
+%   Expected to be used in conjuction with 'play_pRF_movie'
 %
 %   Usage:
 %   [imagesFull,images,stimulus,params] = make_bars(outFile,params)
 %
 %   Example:
-%   imFile      = '/path/to/some/dir/imFile.mat'; % output image file
-%   paramsFile  = '/path/to/some/dir/paramsFile.mat'; % output params file
-%   [images,stimulus,params] = make_bars(imFile,paramsFile);
+%   outFile     = '/path/to/some/dir/outFile.mat'; % output image file
+%   [images]    = make_bars(outFile);
 %
 %   defaults:
 %     params.resolution               = [1920 1080];
@@ -29,33 +28,39 @@ function [imagesFull,images,stimulus,params] = make_bars(outFile,params)
 %% Set defaults (for 3T Prisma at UPenn)
 if ~exist('params','var')
     params.resolution               = [1920 1080];
-    params.step_nx                  = 16; % number of steps per one bar sweep
+    params.scanDur                  = 336; % scan duration in seconds
+    params.sweepDur                 = 16; % duration of a bar sweep in seconds
     params.propScreen               = 1; % proportion of screen height (1 = full height of screen)
-    params.ringsize                 = 4; % proportion of screen radius (4 = 1/4 of radius)
+    params.ringsize                 = 1/4; % proportion of screen radius
     params.motionSteps              = 8; % moving checks within bar
     params.numSubRings              = 1;
     params.display.backColorIndex   = 128; % set grey value
     params.stimRgbRange             = [0 255];
-    params.numImages                = params.motionSteps*(params.step_nx); % total number of images in one pass (16 steps, 8 motion per step)
-    params.numReps                  = 3; % number of times to cycle through images
     params.TR                       = 0.8; % TR in seconds
 end
 %% Pull out params
-step_nx         = params.step_nx;                   % time for one pass (sec)
-halfNumImages   = params.numImages./2;              % half of the images
+step_nx         = params.sweepDur / params.TR;      % time for one pass (sec)
+numImages       = params.motionSteps*(step_nx); % total number of images in one pass (16 steps, 8 motion per step)
+halfNumImages   = numImages./2;                     % half of the images
 numMotSteps     = params.motionSteps;               % 8, refers to the moving checks
 numSubRings     = params.numSubRings;               % 1
 bk              = params.display.backColorIndex;    % 128
 minCmapVal      = min([params.stimRgbRange]);       % [0 255])
 maxCmapVal      = max([params.stimRgbRange]);       % [0 255])
 outerRad            = 0.5*params.propScreen * (params.resolution(2));
-ringWidth           = outerRad / params.ringsize;
+ringWidth           = outerRad * params.ringsize;
 if isfield(params, 'contrast')
     c = params.contrast;
     bg = (minCmapVal + maxCmapVal)/2;
     minCmapVal = round((1-c) * bg);
     maxCmapVal = round((1+c) * bg);
 end
+%% Calculate number of sweeps and buffer
+numSweeps   = 8; % 4 orientations, 2 directions
+numBlanks   = 4; % 4 blank periods of background
+cycleDur    = numSweeps*params.sweepDur + numBlanks*params.sweepDur/2; % cycle duration (in seconds)
+numCycles   = floor(params.scanDur / cycleDur);
+bufferTime  = params.scanDur - numCycles*cycleDur;
 %% Initialize image template %%
 disp('Creating images...');
 m = 2*outerRad;% height;
@@ -78,7 +83,7 @@ r = sqrt (x.^2  + y.^2);
 % first define which orientations
 orientations    = deg2rad(0:45:360); % degrees -> rad
 orientations    = orientations([1 6 3 8 5 2 7 4]); % shuffle order, remove 2pi
-remake_xy       = zeros(1,params.numImages)-1;
+remake_xy       = zeros(1,numImages)-1;
 remake_xy(1:length(remake_xy)/length(orientations):length(remake_xy)) = orientations;
 original_x      = x;
 original_y      = y;
@@ -128,10 +133,12 @@ blankImage = uint8(ones(size(images,1),size(images,2)).*bk);
 blankInd  = size(images,3)+1;
 images(:,:,blankInd)   = blankImage;
 %% Create final sequence
-sweep = 1:params.numImages;
+sweep = 1:numImages;
+bufferBlank = ones(1,params.motionSteps*(bufferTime / params.TR))*blankInd;
 blank = ones(1,length(sweep)/2)*blankInd; % make a 'blank' bar sweep
 % Make a single cycle through the images
 tmpseq = [...
+    blank ...
     1*length(sweep) + sweep ...         % diagonal (up-left)
     sweep ...                           % vertical (left-right)
     blank ...
@@ -143,9 +150,10 @@ tmpseq = [...
     blank ...
     fliplr(3*length(sweep) + sweep) ... % diagonal (down-left)
     fliplr(2*length(sweep) + sweep) ... % horizontal (up)
-    blank];
+    ];
 % Repeat the image cycle by 'params.numReps'
-stimulus.seq = repmat(tmpseq,[1,params.numReps]);
+fullseq = repmat(tmpseq,[1,numCycles]);
+stimulus.seq = [fullseq bufferBlank];
 imagesFull = images(:,:,stimulus.seq);
 % stimulus timing
 totalDur = (length(stimulus.seq) / params.motionSteps) * params.TR; % 8 frames / TR

@@ -12,7 +12,7 @@ if ~exist('TR','var')
     TR = 0.8;
 end
 if ~exist('scanDur','var')
-    scanDur = 384;
+    scanDur = 336; % seconds
 end
 if ~exist('display','var')
     display.distance = 106.5; % distance from screen (cm) - (SC3T);  124.25 - (HUP6)
@@ -70,7 +70,7 @@ PsychImaging('AddTask', 'General', 'UseRetinaResolution');
 [mint,~,~] = Screen('GetFlipInterval',winPtr,200);
 display.frameRate = 1/mint; % 1/monitor flip interval = framerate (Hz)
 display.screenAngle = pix2angle( display, display.resolution );
-rect = Screen('Rect', winPtr );
+%rect = Screen('Rect', winPtr );
 [screenXpix, screenYpix] = Screen('WindowSize', winPtr);% Get the size of the on screen window
 display.resolution = [screenXpix screenYpix];
 [center(1), center(2)] = RectCenter(windowRect); % Get the center coordinate of the window
