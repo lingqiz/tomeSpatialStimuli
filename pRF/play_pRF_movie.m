@@ -16,7 +16,7 @@ if ~exist('scanDur','var')
 end
 if ~exist('display','var')
     display.distance = 106.5; % distance from screen (cm) - (SC3T);  124.25 - (HUP6)
-    display.width = 69.85; % width of screen (cm) - (SC3T); 50.4 - (HUP6)
+    display.width = 69.7347; % width of screen (cm) - (SC3T); 50.4 - (HUP6)
     display.skipChecks = 2;
     display.bkColor = [128 128 128];
     display.screenNum = max(Screen('Screens'));
