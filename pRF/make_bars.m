@@ -22,6 +22,7 @@ function [imagesFull,images,stimulus,params] = make_bars(outFile,params)
 %     params.numImages                = params.motionSteps*(params.step_nx); % total number of images in one pass (16 steps, 8 motion per step)
 %     params.numReps                  = 3; % number of times to cycle through images
 %     params.TR                       = 0.8; % TR in seconds
+%     params.logBars                  = 0; % if = 1, bar width changes logarithmically with eccentricity
 %
 %   Written by Andrew S Bock Sep 2015
 
@@ -37,18 +38,16 @@ if ~exist('params','var')
     params.display.backColorIndex   = 128; % set grey value
     params.stimRgbRange             = [0 255];
     params.TR                       = 0.8; % TR in seconds
+    params.logBars                  = 0; % if = 1, bar width changes logarithmically with eccentricity
 end
 %% Pull out params
-step_nx         = params.sweepDur / params.TR;      % time for one pass (sec)
-numImages       = params.motionSteps*(step_nx); % total number of images in one pass (16 steps, 8 motion per step)
-halfNumImages   = numImages./2;                     % half of the images
+step_nx         = params.sweepDur / params.TR;      % number of steps (TRs) for one pass
 numMotSteps     = params.motionSteps;               % 8, refers to the moving checks
 numSubRings     = params.numSubRings;               % 1
 bk              = params.display.backColorIndex;    % 128
 minCmapVal      = min([params.stimRgbRange]);       % [0 255])
 maxCmapVal      = max([params.stimRgbRange]);       % [0 255])
-outerRad            = 0.5*params.propScreen * (params.resolution(2));
-ringWidth           = outerRad * params.ringsize;
+outerRad        = 0.5*params.propScreen * (params.resolution(2));
 if isfield(params, 'contrast')
     c = params.contrast;
     bg = (minCmapVal + maxCmapVal)/2;
@@ -56,77 +55,80 @@ if isfield(params, 'contrast')
     maxCmapVal = round((1+c) * bg);
 end
 %% Calculate number of sweeps and buffer
-numSweeps   = 8; % 4 orientations, 2 directions
-numBlanks   = 4; % 4 blank periods of background
-cycleDur    = numSweeps*params.sweepDur + numBlanks*params.sweepDur/2; % cycle duration (in seconds)
-numCycles   = floor(params.scanDur / cycleDur);
-bufferTime  = params.scanDur - numCycles*cycleDur;
+numSweeps       = 8;                    % 4 orientations, 2 directions
+numBlanks       = 4;                    % 4 blank periods of background
+numImages       = numSweeps*(step_nx);  % bar orientations (8) x number of steps per bar pass
+halfNumImages   = numImages./2;         % we can flip half the bars to move in the other direction
+cycleDur        = numSweeps*params.sweepDur + numBlanks*params.sweepDur/2; % cycle duration (in seconds)
+numCycles       = floor(params.scanDur / cycleDur);
+bufferTime      = params.scanDur - numCycles*cycleDur;
 %% Initialize image template %%
-disp('Creating images...');
 m = 2*outerRad;% height;
 n = 2*outerRad; % width;
-[x,y]=meshgrid(linspace(-outerRad,outerRad,n),linspace(outerRad,-outerRad,m));
-% here we crop the image if it is larger than the screen
-% seems that you have to have a square matrix, bug either in my or
-% psychtoolbox' code - so we make it square
-if m>params.resolution(2)
-    start  = round((m-params.resolution(2))/2);
-    len    = params.resolution(2);
-    y = y(start+1:start+len, start+1:start+len);
-    x = x(start+1:start+len, start+1:start+len);
-    m = len;
-    n = len;
-end;
+[original_x,original_y]=meshgrid(linspace(-outerRad,outerRad,n),linspace(outerRad,-outerRad,m));
 % r = eccentricity;
-r = sqrt (x.^2  + y.^2);
-% loop over different orientations and make checkerboard
-% first define which orientations
-orientations    = deg2rad(0:45:360); % degrees -> rad
-orientations    = orientations([1 6 3 8 5 2 7 4]); % shuffle order, remove 2pi
-remake_xy       = zeros(1,numImages)-1;
+r = sqrt (original_x.^2  + original_y.^2);
+% define orientations
+orientations        = deg2rad(0:45:360); % degrees -> rad
+orientations        = orientations([1 6 3 8 5 2 7 4]); % shuffle order, remove 2pi
+% Change x and y based on orientation (after each pass)
+remake_xy           = -1*ones(1,numImages);
 remake_xy(1:length(remake_xy)/length(orientations):length(remake_xy)) = orientations;
-original_x      = x;
-original_y      = y;
-% step size of the bar
-step_x          = ((2*outerRad) - ringWidth/2) ./ step_nx;
-step_startx     = -outerRad;%(step_nx-1)./2.*-step_x - (ringWidth./2);
-% Loop that creates the one cycle images
+% step and ring size of the bar
+if params.logBars  
+    % check Width
+    tmp = (logspace(0,1,step_nx/2+1)-1)/ max(logspace(0,1,step_nx/2+1)-1) ; % logspace between 0 and 1
+    tmpWidth        = outerRad*diff(tmp);
+    tmpWidth        = [fliplr(tmpWidth),tmpWidth];
+    checkWidth      = repmat(tmpWidth,1,numSweeps);
+    % Window
+    tmpL            = fliplr(outerRad - cumsum(tmpWidth));
+    tmpH            = -(fliplr(tmpL));
+    lowX            = repmat(tmpL,1,numSweeps);
+    highX           = repmat(tmpH,1,numSweeps);
+else
+    % check Width
+    tmpWidth        = repmat(outerRad*params.ringsize,1,step_nx);
+    checkWidth      = repmat(tmpWidth,1,numSweeps);
+    % Window
+    tmpL            = (linspace(0,2*outerRad-outerRad*params.ringsize,step_nx)) - outerRad;
+    tmpH            = (linspace(outerRad*params.ringsize,2*outerRad,step_nx)) - outerRad;
+    lowX            = repmat(tmpL,1,numSweeps);
+    highX           = repmat(tmpH,1,numSweeps);
+end
+% Create images
+%   Note - only first half of orientations are used with 'halfNumImages'
 images=zeros(m,n,halfNumImages*params.motionSteps,'uint8');
+progBar = ProgressBar(halfNumImages,'Creating images...');
 for imgNum=1:halfNumImages
     if remake_xy(imgNum) >=0
+        % Rotate x and y based on bar orientation
         x = original_x .* cos(remake_xy(imgNum)) - original_y .* sin(remake_xy(imgNum));
         y = original_x .* sin(remake_xy(imgNum)) + original_y .* cos(remake_xy(imgNum));
-        % Calculate checkerboard.
-        % Wedges alternating between -1 and 1 within stimulus window.
-        % The computational contortions are to avoid sign=0 for sin zero-crossings
-        wedges    = sign(round((cos((x+step_startx)*numSubRings*(2*pi/ringWidth)))./2+.5).*2-1);
-        posWedges = find(wedges== 1);
-        negWedges = find(wedges==-1);
-        rings     = zeros(size(wedges));
-        checks    = zeros(size(rings,1),size(rings,2),numMotSteps);
-        for ii=1:numMotSteps,
-            tmprings1 = sign(2*round((cos(y*numSubRings*(2*pi/ringWidth)+(ii-1)/numMotSteps*2*pi)+1)/2)-1);
-            tmprings2 = sign(2*round((cos(y*numSubRings*(2*pi/ringWidth)-(ii-1)/numMotSteps*2*pi)+1)/2)-1);
-            rings(posWedges) = tmprings1(posWedges);
-            rings(negWedges) = tmprings2(negWedges);
-            checks(:,:,ii)=minCmapVal+ceil((maxCmapVal-minCmapVal) * (wedges.*rings+1)./2);
-        end;
-        % reset starting point
-        loX = step_startx - step_x;
-    end;
-    loX   = loX + step_x;
-    hiX   = loX + ringWidth;
-    % Ring completely disappear from view before it re-appears again in the middle.
-    % we do this just be removing the second | from the window
-    window = ( (x>=loX & x<=hiX) & r<outerRad);
-    % yet another loop to be able to move the checks...
-    tmpvar = zeros(m,n);
-    tmpvar(window) = 1;
-    tmpvar = repmat(tmpvar,[1 1 numMotSteps]);
-    window = tmpvar == 1;
-    img         = bk*ones(size(checks));
-    img(window) = checks(window);
+    end
+    % bars alternating between -1 and 1 within stimulus window.
+    bars    = sign(round((cos((x-outerRad)*numSubRings*(2*pi/checkWidth(imgNum))))./2+.5).*2-1);
+    posBars = find(bars== 1);
+    negBars = find(bars==-1);
+    checks     = zeros(size(bars));
+    allChecks    = zeros(size(checks,1),size(checks,2),numMotSteps);
+    % Create checkerboard, move bars in opposite directions
+    for ii=1:numMotSteps,
+        posChecks = sign(2*round((cos(y*numSubRings*(2*pi/checkWidth(imgNum))+(ii-1)/numMotSteps*2*pi)+1)/2)-1);
+        negChecks = sign(2*round((cos(y*numSubRings*(2*pi/checkWidth(imgNum))-(ii-1)/numMotSteps*2*pi)+1)/2)-1);
+        checks(posBars) = posChecks(posBars);
+        checks(negBars) = negChecks(negBars);
+        allChecks(:,:,ii)=minCmapVal+ceil((maxCmapVal-minCmapVal) * (bars.*checks+1)./2);
+    end
+    % Make window to show checkboard
+    tmpwindow = zeros(m,n);
+    tmpwindow( (x>=lowX(imgNum) & x<=highX(imgNum)) & r<outerRad) = 1;
+    window = logical(repmat(tmpwindow,[1 1 numMotSteps]));
+    % Make images
+    img         = bk*ones(size(allChecks));
+    img(window) = allChecks(window);
     images(:,:,(imgNum-1)*numMotSteps+1:imgNum*numMotSteps) = uint8(img);
+    progBar(imgNum);
 end
 %% insert blank image
 blankImage = uint8(ones(size(images,1),size(images,2)).*bk);
