@@ -23,7 +23,7 @@ function [imagesFull,images,stimulus,params] = make_bars(outFile,params)
 %     params.numReps                  = 3; % number of times to cycle through images
 %     params.TR                       = 0.8; % TR in seconds
 %     params.logBars                  = 0; % if = 1, bar width changes logarithmically with eccentricity
-%     params.logSteps                 = 0; % if = 1, bar steps are smaller near the fovea
+%     params.smallSteps               = 0; % if = 1, bar steps are smaller near the fovea
 %
 %   Written by Andrew S Bock Sep 2015
 
@@ -34,18 +34,19 @@ if ~exist('params','var')
     params.sweepDur                 = 16; % duration of a bar sweep in seconds
     params.propScreen               = 1; % proportion of screen height (1 = full height of screen)
     params.ringsize                 = 1/4; % proportion of screen radius
+    params.checksize                = 2; % higher values = smaller checks
     params.motionSteps              = 8; % moving checks within bar
     params.numSubRings              = 1;
     params.display.backColorIndex   = 128; % set grey value
     params.stimRgbRange             = [0 255];
     params.TR                       = 0.8; % TR in seconds
     params.logBars                  = 0; % if = 1, bar width changes logarithmically with eccentricity
-    params.logSteps                 = 0; % if = 1, bar steps are smaller near the fovea
+    params.smallSteps               = 1; % if = 1, bar steps are smaller near the fovea
 end
 %% Pull out params
+checkSize       = params.checksize;
 step_nx         = params.sweepDur / params.TR;      % number of steps (TRs) for one pass
 numMotSteps     = params.motionSteps;               % 8, refers to the moving checks
-numSubRings     = params.numSubRings;               % 1
 bk              = params.display.backColorIndex;    % 128
 minCmapVal      = min([params.stimRgbRange]);       % [0 255])
 maxCmapVal      = max([params.stimRgbRange]);       % [0 255])
@@ -78,35 +79,33 @@ remake_xy           = -1*ones(1,numImages);
 remake_xy(1:length(remake_xy)/length(orientations):length(remake_xy)) = orientations;
 % step and ring size of the bar
 if params.logBars
-    % check Width
+    % bar Width
     tmp = (logspace(0,1,step_nx/2+1)-1)/ max(logspace(0,1,step_nx/2+1)-1); % logspace between 0 and 1
     tmpWidth        = outerRad*diff(tmp);
     tmpWidth        = [fliplr(tmpWidth),tmpWidth];
-    checkWidth      = repmat(tmpWidth,1,numSweeps);
+    barWidth        = repmat(tmpWidth,1,numSweeps);
     % Window
     tmpL            = fliplr(outerRad - cumsum(tmpWidth));
-    tmpH            = -(fliplr(tmpL));
+    tmpR            = -(fliplr(tmpL));
 else
     % check Width
     tmpWidth        = repmat(outerRad*params.ringsize,1,step_nx);
-    checkWidth      = repmat(tmpWidth,1,numSweeps);
+    barWidth        = repmat(tmpWidth,1,numSweeps);
     % Window
-    if params.logSteps
-        tmp = fliplr(1 - (logspace(0,1,step_nx/2)-1)/ max(logspace(0,1,step_nx/2)-1)); % logspace between 0 and 1
-        halfBar = outerRad*params.ringsize/2;
-        outerMid = outerRad - halfBar;
-        tmpMids = outerMid - outerMid*tmp;
-        tmpMids(end) = tmpMids(end-1)/4;
-        % Window
-        tmpL            = [-tmpMids - halfBar,fliplr(tmpMids - halfBar)];
-        tmpH            = [-tmpMids + halfBar,fliplr(tmpMids + halfBar)];
+    if params.smallSteps
+        % Move bar using a quadratic
+        tmp = ((1:step_nx/2).^2) / max((1:step_nx/2).^2);
+        tmpWidth = outerRad*params.ringsize;
+        barEdges = tmp*(outerRad - tmpWidth/2);
+        tmpL = [fliplr(-barEdges) - tmpWidth/2,barEdges - tmpWidth/2]; % left edge
+        tmpR = [fliplr(-barEdges) + tmpWidth/2,barEdges + tmpWidth/2]; % right edge
     else
         tmpL            = (linspace(0,2*outerRad-outerRad*params.ringsize,step_nx)) - outerRad;
-        tmpH            = (linspace(outerRad*params.ringsize,2*outerRad,step_nx)) - outerRad;
+        tmpR            = (linspace(outerRad*params.ringsize,2*outerRad,step_nx)) - outerRad;
     end
 end
 lowX            = repmat(tmpL,1,numSweeps);
-highX           = repmat(tmpH,1,numSweeps);
+highX           = repmat(tmpR,1,numSweeps);
 %% Create images
 %   Note - only first half of orientations are used with 'halfNumImages'
 images=zeros(m,n,halfNumImages*params.motionSteps,'uint8');
@@ -118,15 +117,20 @@ for imgNum=1:halfNumImages
         y = original_x .* sin(remake_xy(imgNum)) + original_y .* cos(remake_xy(imgNum));
     end
     % bars alternating between -1 and 1 within stimulus window.
-    bars    = sign(round((cos((x-outerRad)*numSubRings*(2*pi/checkWidth(imgNum))))./2+.5).*2-1);
-    posBars = find(bars== 1);
-    negBars = find(bars==-1);
-    checks     = zeros(size(bars));
-    allChecks    = zeros(size(checks,1),size(checks,2),numMotSteps);
+    bars        = sign(round((cos( (checkSize*x-outerRad) * (2*pi/barWidth(imgNum)) ) ...
+        )./2+.5).*2-1); % this last bit avoids bars == 0;
+    posBars     = find(bars == 1);
+    negBars     = find(bars ==-1);
+    checks      = zeros(size(bars));
+    allChecks   = zeros(size(checks,1),size(checks,2),numMotSteps);
     % Create checkerboard, move bars in opposite directions
     for ii=1:numMotSteps,
-        posChecks = sign(2*round((cos(y*numSubRings*(2*pi/checkWidth(imgNum))+(ii-1)/numMotSteps*2*pi)+1)/2)-1);
-        negChecks = sign(2*round((cos(y*numSubRings*(2*pi/checkWidth(imgNum))-(ii-1)/numMotSteps*2*pi)+1)/2)-1);
+        posChecks = sign(2*round(( ...
+            cos( checkSize*y*(2*pi/barWidth(imgNum) )...
+            +(ii-1)/numMotSteps*2*pi)+1)/2)-1);
+        negChecks = sign(2*round(( ...
+            cos( checkSize*y*(2*pi/barWidth(imgNum) )...
+            -(ii-1)/numMotSteps*2*pi)+1)/2)-1);
         checks(posBars) = posChecks(posBars);
         checks(negBars) = negChecks(negBars);
         allChecks(:,:,ii)=minCmapVal+ceil((maxCmapVal-minCmapVal) * (bars.*checks+1)./2);

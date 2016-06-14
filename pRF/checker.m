@@ -30,7 +30,7 @@ if ~exist('show','var')
     show = 0;
 end
 if ~exist('display','var')
-    display.dist = 124.25; % distance from screen (cm)
+    display.distance = 124.25; % distance from screen (cm)
     display.width = 50.4; % width of screen (cm)
     display.resolution = [1024 768];
 end
