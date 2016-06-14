@@ -11,34 +11,32 @@ function [imagesFull,images,stimulus,params] = make_bars(outFile,params)
 %   [images]    = make_bars(outFile);
 %
 %   defaults:
-%     params.resolution               = [1920 1080];
-%     params.step_nx                  = 16; % number of steps per one bar sweep
+%     params.resolution               = [1920 1080]; % screen resolution
+%     params.scanDur                  = 336; % scan duration in seconds
+%     params.sweepDur                 = 16; % duration of a bar sweep in seconds
 %     params.propScreen               = 1; % proportion of screen height (1 = full height of screen)
-%     params.ringsize                 = 4; % proportion of screen radius (4 = 1/4 of radius)
+%     params.barsize                  = 1/4; % proportion of screen radius
+%     params.checksize                = 2; % higher values = smaller checks
 %     params.motionSteps              = 8; % moving checks within bar
-%     params.numSubRings              = 1;
-%     params.display.backColorIndex   = 128; % set grey value
-%     params.stimRgbRange             = [0 255];
-%     params.numImages                = params.motionSteps*(params.step_nx); % total number of images in one pass (16 steps, 8 motion per step)
-%     params.numReps                  = 3; % number of times to cycle through images
+%     params.display.backColorIndex   = 128; % set background grey value
+%     params.stimRgbRange             = [0 255]; % color range
 %     params.TR                       = 0.8; % TR in seconds
 %     params.logBars                  = 0; % if = 1, bar width changes logarithmically with eccentricity
-%     params.smallSteps               = 0; % if = 1, bar steps are smaller near the fovea
+%     params.smallSteps               = 1; % if = 1, bar steps are smaller near the fovea
 %
 %   Written by Andrew S Bock Sep 2015
 
 %% Set defaults (for 3T Prisma at UPenn)
 if ~exist('params','var')
-    params.resolution               = [1920 1080];
+    params.resolution               = [1920 1080]; % screen resolution
     params.scanDur                  = 336; % scan duration in seconds
     params.sweepDur                 = 16; % duration of a bar sweep in seconds
     params.propScreen               = 1; % proportion of screen height (1 = full height of screen)
-    params.ringsize                 = 1/4; % proportion of screen radius
+    params.barsize                  = 1/4; % proportion of screen radius
     params.checksize                = 2; % higher values = smaller checks
     params.motionSteps              = 8; % moving checks within bar
-    params.numSubRings              = 1;
-    params.display.backColorIndex   = 128; % set grey value
-    params.stimRgbRange             = [0 255];
+    params.display.backColorIndex   = 128; % set background grey value
+    params.stimRgbRange             = [0 255]; % color range
     params.TR                       = 0.8; % TR in seconds
     params.logBars                  = 0; % if = 1, bar width changes logarithmically with eccentricity
     params.smallSteps               = 1; % if = 1, bar steps are smaller near the fovea
@@ -89,19 +87,25 @@ if params.logBars
     tmpR            = -(fliplr(tmpL));
 else
     % check Width
-    tmpWidth        = repmat(outerRad*params.ringsize,1,step_nx);
+    tmpWidth        = repmat(outerRad*params.barsize,1,step_nx);
     barWidth        = repmat(tmpWidth,1,numSweeps);
     % Window
     if params.smallSteps
         % Move bar using a quadratic
         tmp = ((1:step_nx/2).^2) / max((1:step_nx/2).^2);
-        tmpWidth = outerRad*params.ringsize;
-        barEdges = tmp*(outerRad - tmpWidth/2);
-        tmpL = [fliplr(-barEdges) - tmpWidth/2,barEdges - tmpWidth/2]; % left edge
-        tmpR = [fliplr(-barEdges) + tmpWidth/2,barEdges + tmpWidth/2]; % right edge
+        tmpWidth = outerRad*params.barsize;
+%         barEdges = tmp*(outerRad - tmpWidth/2);
+%         tmpL = [fliplr(-barEdges) - tmpWidth/2,barEdges - tmpWidth/2]; % left edge
+%         tmpR = [fliplr(-barEdges) + tmpWidth/2,barEdges + tmpWidth/2]; % right edge
+%         tmpL = [fliplr(-barEdges) - tmpWidth/2,barEdges - tmpWidth/2]; % left edge
+%         tmpR = [fliplr(-barEdges) + tmpWidth/2,barEdges + tmpWidth/2]; % right edge
+        LbarEdges = tmp*(outerRad);
+        RbarEdges = tmp*(outerRad- tmpWidth);
+        tmpL = [fliplr(-LbarEdges),RbarEdges]; % left edge
+        tmpR = tmpL + tmpWidth; % right edge
     else
-        tmpL            = (linspace(0,2*outerRad-outerRad*params.ringsize,step_nx)) - outerRad;
-        tmpR            = (linspace(outerRad*params.ringsize,2*outerRad,step_nx)) - outerRad;
+        tmpL            = (linspace(0,2*outerRad-outerRad*params.barsize,step_nx)) - outerRad;
+        tmpR            = (linspace(outerRad*params.barsize,2*outerRad,step_nx)) - outerRad;
     end
 end
 lowX            = repmat(tmpL,1,numSweeps);
