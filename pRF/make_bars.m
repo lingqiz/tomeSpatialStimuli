@@ -99,10 +99,10 @@ else
 %         tmpR = [fliplr(-barEdges) + tmpWidth/2,barEdges + tmpWidth/2]; % right edge
 %         tmpL = [fliplr(-barEdges) - tmpWidth/2,barEdges - tmpWidth/2]; % left edge
 %         tmpR = [fliplr(-barEdges) + tmpWidth/2,barEdges + tmpWidth/2]; % right edge
-        LbarEdges = tmp*(outerRad);
-        RbarEdges = tmp*(outerRad- tmpWidth);
-        tmpL = [fliplr(-LbarEdges),RbarEdges]; % left edge
-        tmpR = tmpL + tmpWidth; % right edge
+        LbarEdges = tmp*(outerRad- tmpWidth);
+        RbarEdges = tmp*(outerRad);
+        tmpL = [fliplr(-LbarEdges),RbarEdges] - tmpWidth; % left edge
+        tmpR = [fliplr(-LbarEdges),RbarEdges]; % right edge
     else
         tmpL            = (linspace(0,2*outerRad-outerRad*params.barsize,step_nx)) - outerRad;
         tmpR            = (linspace(outerRad*params.barsize,2*outerRad,step_nx)) - outerRad;
