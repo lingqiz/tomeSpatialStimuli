@@ -25,7 +25,11 @@ end
 if ~exist('redFrames','var')
     maxFrames = size(images,3);
     redFrames = zeros(1,maxFrames);
-    switches = sort(randperm(maxFrames,ceil(maxFrames/8/TR/20))); % ~every 20s
+    minDiff = 0;
+    while minDiff < ceil(4*TR*8); % dot color changes are separated by at least 4 TRs
+        switches = sort(randperm(maxFrames,ceil(maxFrames/8/TR/20))); % ~every 20s
+        minDiff = min(diff(switches));
+    end
     ct = 0;
     for i = 1:length(switches)
         if ct

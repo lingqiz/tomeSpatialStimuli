@@ -78,29 +78,29 @@ remake_xy(1:length(remake_xy)/length(orientations):length(remake_xy)) = orientat
 if params.logBars
     % bar Width
     tmp = (logspace(0,1,sweepTRs/2+1)-1)/ max(logspace(0,1,sweepTRs/2+1)-1); % logspace between 0 and 1
-    tmpWidth        = outerRad*diff(tmp);
-    tmpWidth        = [fliplr(tmpWidth),tmpWidth];
-    barWidth        = repmat(tmpWidth,1,numSweeps);
+    tmpWidths        = outerRad*diff(tmp);
+    tmpWidths        = [fliplr(tmpWidths),tmpWidths];
+    barWidths        = repmat(tmpWidths,1,numSweeps);
     % Window
-    tmpL            = fliplr(outerRad - cumsum(tmpWidth));
+    tmpL            = fliplr(outerRad - cumsum(tmpWidths));
     tmpR            = -(fliplr(tmpL));
 else
     % check Width
-    tmpWidth        = repmat(outerRad*params.barsize,1,sweepTRs);
-    barWidth        = repmat(tmpWidth,1,numSweeps);
+    tmpWidths        = repmat(outerRad*params.barsize,1,sweepTRs);
+    barWidths        = repmat(tmpWidths,1,numSweeps);
     % Window
     if params.smallSteps
         % Move bar using a quadratic
         tmp = ((1:sweepTRs/2).^2) / max((1:sweepTRs/2).^2);
+        barWidth = outerRad*params.barsize;
         % Steps based on center of bar
-        %         tmpWidth = outerRad*params.barsize;
         %         barEdges = tmp*(outerRad - tmpWidth/2);
         %         tmpL = [fliplr(-barEdges) - tmpWidth/2,barEdges - tmpWidth/2]; % left edge
         %         tmpR = [fliplr(-barEdges) + tmpWidth/2,barEdges + tmpWidth/2]; % right edge
         % Steps based on leading edge
-        LbarEdges = tmp*(outerRad- tmpWidth);
+        LbarEdges = tmp*(outerRad- barWidth);
         RbarEdges = tmp*(outerRad);
-        tmpL = [fliplr(-LbarEdges),RbarEdges] - tmpWidth; % left edge
+        tmpL = [fliplr(-LbarEdges),RbarEdges] - barWidth; % left edge
         tmpR = [fliplr(-LbarEdges),RbarEdges]; % right edge
     else
         tmpL            = (linspace(0,2*outerRad-outerRad*params.barsize,sweepTRs)) - outerRad;
@@ -119,7 +119,7 @@ for imgNum=1:numImages
         y = original_x .* sin(remake_xy(imgNum)) + original_y .* cos(remake_xy(imgNum));
     end
     % bars alternating between -1 and 1 within stimulus window.
-    bars        = sign(round((cos( (checkSize*x-outerRad) * (2*pi/barWidth(imgNum)) ) ...
+    bars        = sign(round((cos( (checkSize*x-outerRad) * (2*pi/barWidths(imgNum)) ) ...
         )./2+.5).*2-1); % this last bit avoids bars == 0;
     posBars     = find(bars == 1);
     negBars     = find(bars ==-1);
@@ -128,10 +128,10 @@ for imgNum=1:numImages
     % Create checkerboard, move bars in opposite directions
     for ii=1:numMotSteps,
         posChecks = sign(2*round(( ...
-            cos( checkSize*y*(2*pi/barWidth(imgNum) )...
+            cos( checkSize*y*(2*pi/barWidths(imgNum) )...
             +(ii-1)/numMotSteps*2*pi)+1)/2)-1);
         negChecks = sign(2*round(( ...
-            cos( checkSize*y*(2*pi/barWidth(imgNum) )...
+            cos( checkSize*y*(2*pi/barWidths(imgNum) )...
             -(ii-1)/numMotSteps*2*pi)+1)/2)-1);
         checks(posBars) = posChecks(posBars);
         checks(negBars) = negChecks(negBars);
@@ -178,5 +178,6 @@ imagesFull = images(:,:,stimulus.seq);
 totalDur = (length(stimulus.seq) / params.motionSteps) * params.TR; % 8 frames / TR
 stimulus.seqtiming = linspace(0,totalDur - (totalDur/length(stimulus.seq)),length(stimulus.seq));
 %% Save image and params files
+disp('Saving output file...');
 save(outFile,'images','stimulus','params','imagesFull','-v7.3');
 disp('done.');
