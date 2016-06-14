@@ -91,17 +91,13 @@ else
     % Window
     if params.smallSteps
         % Move bar using a quadratic
-        tmp = ((1:sweepTRs/2).^2) / max((1:sweepTRs/2).^2);
+        tmp = ((1:sweepTRs/2-1).^2) / max((1:sweepTRs/2-1).^2);
         barWidth = outerRad*params.barsize;
-        % Steps based on center of bar
-        %         barEdges = tmp*(outerRad - tmpWidth/2);
-        %         tmpL = [fliplr(-barEdges) - tmpWidth/2,barEdges - tmpWidth/2]; % left edge
-        %         tmpR = [fliplr(-barEdges) + tmpWidth/2,barEdges + tmpWidth/2]; % right edge
         % Steps based on leading edge
-        LbarEdges = tmp*(outerRad- barWidth);
-        RbarEdges = tmp*(outerRad);
-        tmpL = [fliplr(-LbarEdges),RbarEdges] - barWidth; % left edge
-        tmpR = [fliplr(-LbarEdges),RbarEdges]; % right edge
+        LbarEdges = fliplr(-[0,tmp*(outerRad - barWidth)]);
+        RbarEdges = [tmp*(outerRad - barWidth),outerRad];
+        tmpR = [LbarEdges,RbarEdges]; % right edge
+        tmpL = tmpR - barWidth; % left edge
     else
         tmpL            = (linspace(0,2*outerRad-outerRad*params.barsize,sweepTRs)) - outerRad;
         tmpR            = (linspace(outerRad*params.barsize,2*outerRad,sweepTRs)) - outerRad;
