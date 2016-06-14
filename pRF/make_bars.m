@@ -43,7 +43,7 @@ if ~exist('params','var')
 end
 %% Pull out params
 checkSize       = params.checksize;
-step_nx         = params.sweepDur / params.TR;      % number of steps (TRs) for one pass
+sweepTRs         = params.sweepDur / params.TR;      % number of steps (TRs) for one pass
 numMotSteps     = params.motionSteps;               % 8, refers to the moving checks
 bk              = params.display.backColorIndex;    % 128
 minCmapVal      = min([params.stimRgbRange]);       % [0 255])
@@ -58,8 +58,7 @@ end
 %% Calculate number of sweeps and buffer
 numSweeps       = 8;                    % 4 orientations, 2 directions
 numBlanks       = 4;                    % 4 blank periods of background
-numImages       = numSweeps*(step_nx);  % bar orientations (8) x number of steps per bar pass
-halfNumImages   = numImages./2;         % we can flip half the bars to move in the other direction
+numImages       = numSweeps*(sweepTRs);  % bar orientations (8) x number of steps per bar pass
 cycleDur        = numSweeps*params.sweepDur + numBlanks*params.sweepDur/2; % cycle duration (in seconds)
 numCycles       = floor(params.scanDur / cycleDur);
 bufferTime      = params.scanDur - numCycles*cycleDur;
@@ -78,7 +77,7 @@ remake_xy(1:length(remake_xy)/length(orientations):length(remake_xy)) = orientat
 % step and ring size of the bar
 if params.logBars
     % bar Width
-    tmp = (logspace(0,1,step_nx/2+1)-1)/ max(logspace(0,1,step_nx/2+1)-1); % logspace between 0 and 1
+    tmp = (logspace(0,1,sweepTRs/2+1)-1)/ max(logspace(0,1,sweepTRs/2+1)-1); % logspace between 0 and 1
     tmpWidth        = outerRad*diff(tmp);
     tmpWidth        = [fliplr(tmpWidth),tmpWidth];
     barWidth        = repmat(tmpWidth,1,numSweeps);
@@ -87,34 +86,33 @@ if params.logBars
     tmpR            = -(fliplr(tmpL));
 else
     % check Width
-    tmpWidth        = repmat(outerRad*params.barsize,1,step_nx);
+    tmpWidth        = repmat(outerRad*params.barsize,1,sweepTRs);
     barWidth        = repmat(tmpWidth,1,numSweeps);
     % Window
     if params.smallSteps
         % Move bar using a quadratic
-        tmp = ((1:step_nx/2).^2) / max((1:step_nx/2).^2);
-        tmpWidth = outerRad*params.barsize;
-%         barEdges = tmp*(outerRad - tmpWidth/2);
-%         tmpL = [fliplr(-barEdges) - tmpWidth/2,barEdges - tmpWidth/2]; % left edge
-%         tmpR = [fliplr(-barEdges) + tmpWidth/2,barEdges + tmpWidth/2]; % right edge
-%         tmpL = [fliplr(-barEdges) - tmpWidth/2,barEdges - tmpWidth/2]; % left edge
-%         tmpR = [fliplr(-barEdges) + tmpWidth/2,barEdges + tmpWidth/2]; % right edge
+        tmp = ((1:sweepTRs/2).^2) / max((1:sweepTRs/2).^2);
+        % Steps based on center of bar
+        %         tmpWidth = outerRad*params.barsize;
+        %         barEdges = tmp*(outerRad - tmpWidth/2);
+        %         tmpL = [fliplr(-barEdges) - tmpWidth/2,barEdges - tmpWidth/2]; % left edge
+        %         tmpR = [fliplr(-barEdges) + tmpWidth/2,barEdges + tmpWidth/2]; % right edge
+        % Steps based on leading edge
         LbarEdges = tmp*(outerRad- tmpWidth);
         RbarEdges = tmp*(outerRad);
         tmpL = [fliplr(-LbarEdges),RbarEdges] - tmpWidth; % left edge
         tmpR = [fliplr(-LbarEdges),RbarEdges]; % right edge
     else
-        tmpL            = (linspace(0,2*outerRad-outerRad*params.barsize,step_nx)) - outerRad;
-        tmpR            = (linspace(outerRad*params.barsize,2*outerRad,step_nx)) - outerRad;
+        tmpL            = (linspace(0,2*outerRad-outerRad*params.barsize,sweepTRs)) - outerRad;
+        tmpR            = (linspace(outerRad*params.barsize,2*outerRad,sweepTRs)) - outerRad;
     end
 end
 lowX            = repmat(tmpL,1,numSweeps);
 highX           = repmat(tmpR,1,numSweeps);
 %% Create images
-%   Note - only first half of orientations are used with 'halfNumImages'
-images=zeros(m,n,halfNumImages*params.motionSteps,'uint8');
-progBar = ProgressBar(halfNumImages,'Creating images...');
-for imgNum=1:halfNumImages
+images=zeros(m,n,numImages*params.motionSteps,'uint8');
+progBar = ProgressBar(numImages,'Creating images...');
+for imgNum=1:numImages
     if remake_xy(imgNum) >=0
         % Rotate x and y based on bar orientation
         x = original_x .* cos(remake_xy(imgNum)) - original_y .* sin(remake_xy(imgNum));
@@ -166,11 +164,11 @@ tmpseq = [...
     3*length(sweep) + sweep ...         % diagonal (up-right)
     2*length(sweep) + sweep ...         % horizontal (down)
     blank ...
-    fliplr(1*length(sweep) + sweep) ... % diagonal (down-right)
-    fliplr(sweep) ...                   % vertical (right-left)
+    5*length(sweep) + sweep ...         % diagonal (down-right)
+    4*length(sweep) + sweep ...         % vertical (right-left)
     blank ...
-    fliplr(3*length(sweep) + sweep) ... % diagonal (down-left)
-    fliplr(2*length(sweep) + sweep) ... % horizontal (up)
+    7*length(sweep) + sweep ...         % diagonal (down-left)
+    6*length(sweep) + sweep ...         % horizontal (up)
     ];
 % Repeat the image cycle by 'params.numReps'
 fullseq = repmat(tmpseq,[1,numCycles]);
@@ -180,5 +178,5 @@ imagesFull = images(:,:,stimulus.seq);
 totalDur = (length(stimulus.seq) / params.motionSteps) * params.TR; % 8 frames / TR
 stimulus.seqtiming = linspace(0,totalDur - (totalDur/length(stimulus.seq)),length(stimulus.seq));
 %% Save image and params files
-save(outFile,'images','stimulus','params');
+save(outFile,'images','stimulus','params','imagesFull','-v7.3');
 disp('done.');
