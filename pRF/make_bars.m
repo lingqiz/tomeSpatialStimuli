@@ -23,6 +23,7 @@ function [imagesFull,images,stimulus,params] = make_bars(outFile,params)
 %     params.numReps                  = 3; % number of times to cycle through images
 %     params.TR                       = 0.8; % TR in seconds
 %     params.logBars                  = 0; % if = 1, bar width changes logarithmically with eccentricity
+%     params.logSteps                 = 0; % if = 1, bar steps are smaller near the fovea
 %
 %   Written by Andrew S Bock Sep 2015
 
@@ -39,6 +40,7 @@ if ~exist('params','var')
     params.stimRgbRange             = [0 255];
     params.TR                       = 0.8; % TR in seconds
     params.logBars                  = 0; % if = 1, bar width changes logarithmically with eccentricity
+    params.logSteps                 = 0; % if = 1, bar steps are smaller near the fovea
 end
 %% Pull out params
 step_nx         = params.sweepDur / params.TR;      % number of steps (TRs) for one pass
@@ -75,28 +77,37 @@ orientations        = orientations([1 6 3 8 5 2 7 4]); % shuffle order, remove 2
 remake_xy           = -1*ones(1,numImages);
 remake_xy(1:length(remake_xy)/length(orientations):length(remake_xy)) = orientations;
 % step and ring size of the bar
-if params.logBars  
+if params.logBars
     % check Width
-    tmp = (logspace(0,1,step_nx/2+1)-1)/ max(logspace(0,1,step_nx/2+1)-1) ; % logspace between 0 and 1
+    tmp = (logspace(0,1,step_nx/2+1)-1)/ max(logspace(0,1,step_nx/2+1)-1); % logspace between 0 and 1
     tmpWidth        = outerRad*diff(tmp);
     tmpWidth        = [fliplr(tmpWidth),tmpWidth];
     checkWidth      = repmat(tmpWidth,1,numSweeps);
     % Window
     tmpL            = fliplr(outerRad - cumsum(tmpWidth));
     tmpH            = -(fliplr(tmpL));
-    lowX            = repmat(tmpL,1,numSweeps);
-    highX           = repmat(tmpH,1,numSweeps);
 else
     % check Width
     tmpWidth        = repmat(outerRad*params.ringsize,1,step_nx);
     checkWidth      = repmat(tmpWidth,1,numSweeps);
     % Window
-    tmpL            = (linspace(0,2*outerRad-outerRad*params.ringsize,step_nx)) - outerRad;
-    tmpH            = (linspace(outerRad*params.ringsize,2*outerRad,step_nx)) - outerRad;
-    lowX            = repmat(tmpL,1,numSweeps);
-    highX           = repmat(tmpH,1,numSweeps);
+    if params.logSteps
+        tmp = fliplr(1 - (logspace(0,1,step_nx/2)-1)/ max(logspace(0,1,step_nx/2)-1)); % logspace between 0 and 1
+        halfBar = outerRad*params.ringsize/2;
+        outerMid = outerRad - halfBar;
+        tmpMids = outerMid - outerMid*tmp;
+        tmpMids(end) = tmpMids(end-1)/4;
+        % Window
+        tmpL            = [-tmpMids - halfBar,fliplr(tmpMids - halfBar)];
+        tmpH            = [-tmpMids + halfBar,fliplr(tmpMids + halfBar)];
+    else
+        tmpL            = (linspace(0,2*outerRad-outerRad*params.ringsize,step_nx)) - outerRad;
+        tmpH            = (linspace(outerRad*params.ringsize,2*outerRad,step_nx)) - outerRad;
+    end
 end
-% Create images
+lowX            = repmat(tmpL,1,numSweeps);
+highX           = repmat(tmpH,1,numSweeps);
+%% Create images
 %   Note - only first half of orientations are used with 'halfNumImages'
 images=zeros(m,n,halfNumImages*params.motionSteps,'uint8');
 progBar = ProgressBar(halfNumImages,'Creating images...');
@@ -160,6 +171,6 @@ imagesFull = images(:,:,stimulus.seq);
 % stimulus timing
 totalDur = (length(stimulus.seq) / params.motionSteps) * params.TR; % 8 frames / TR
 stimulus.seqtiming = linspace(0,totalDur - (totalDur/length(stimulus.seq)),length(stimulus.seq));
-disp('done.');
 %% Save image and params files
 save(outFile,'images','stimulus','params');
+disp('done.');
