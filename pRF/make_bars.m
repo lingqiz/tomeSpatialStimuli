@@ -43,7 +43,7 @@ if ~exist('params','var')
 end
 %% Pull out params
 checkSize       = params.checksize;
-sweepTRs         = params.sweepDur / params.TR;      % number of steps (TRs) for one pass
+sweepTRs        = params.sweepDur / params.TR;      % number of steps (TRs) for one pass
 numMotSteps     = params.motionSteps;               % 8, refers to the moving checks
 bk              = params.display.backColorIndex;    % 128
 minCmapVal      = min([params.stimRgbRange]);       % [0 255])
@@ -90,9 +90,11 @@ else
     barWidths        = repmat(tmpWidths,1,numSweeps);
     % Window
     if params.smallSteps
-        % Move bar using a quadratic
-        tmp = ((1:sweepTRs/2-1).^2) / max((1:sweepTRs/2-1).^2);
         barWidth = outerRad*params.barsize;
+        %         % Move bar using a quadratic
+        %         tmp = ((1:sweepTRs/2-1).^2) / max((1:sweepTRs/2-1).^2);
+        % Move bar logarithmically
+        tmp = (logspace(0.1,1,sweepTRs/2-1)-1)/ max(logspace(0.1,1,sweepTRs/2-1)-1);
         % Steps based on leading edge
         LbarEdges = fliplr(-[0,tmp*(outerRad - barWidth)]);
         RbarEdges = [tmp*(outerRad - barWidth),outerRad];
