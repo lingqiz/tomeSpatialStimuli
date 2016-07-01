@@ -176,8 +176,8 @@ disp(['elapsedTime = ' num2str(elapsedTime)]);
 ListenChar(1);
 ShowCursor;
 Screen('CloseAll');
-if ~exist(fullfile('~/Desktop/MRI',[subj '_' date]),'dir')
-    mkdir(fullfile('~/Desktop/MRI',[subj '_' date]));
+if ~exist(fullfile('~/Desktop/pRF_data',[subj '_' date]),'dir')
+    mkdir(fullfile('~/Desktop/pRF_data',[subj '_' date]));
 end
-save(fullfile('~/Desktop/MRI',[subj '_' date],['run' num2str(runNum)]),'stim');
+save(fullfile('~/Desktop/pRF_data',[subj '_' date],['run' num2str(runNum)]),'stim');
 return
