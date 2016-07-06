@@ -1,9 +1,12 @@
-function play_pRF_movie(subj,runNum,images,TR,scanDur,display,redFrames)
+function play_pRF(subj,runNum,images,TR,scanDur,display,redFrames)
 
 %% Play pRF movie stimuli
 %   'images' input created using 'make_bars.m'
+%
 %   Usage:
-%   play_pRF_movie(subj,runNum,images,TR,scanDur,display,redFrames)
+%   outFile     = '/path/to/some/dir/outFile.mat'; % output image file
+%   images      = make_bars(outFile);
+%   play_pRF(subj,runNum,images,TR,scanDur,display,redFrames);
 %
 %   Written by Andrew S Bock Aug 2014
 
@@ -180,4 +183,3 @@ if ~exist(fullfile('~/Desktop/pRF_data',[subj '_' date]),'dir')
     mkdir(fullfile('~/Desktop/pRF_data',[subj '_' date]));
 end
 save(fullfile('~/Desktop/pRF_data',[subj '_' date],['run' num2str(runNum)]),'stim');
-return

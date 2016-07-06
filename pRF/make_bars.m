@@ -1,7 +1,7 @@
 function [imagesFull,images,stimulus,params] = make_bars(outFile,params)
 
 %% Makes drifting bar stimuli for pRF mapping.
-%   Expected to be used in conjuction with 'play_pRF_movie'
+%   Expected to be used in conjuction with 'play_pRF'
 %
 %   Usage:
 %   [imagesFull,images,stimulus,params] = make_bars(outFile,params)

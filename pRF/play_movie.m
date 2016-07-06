@@ -1,37 +1,32 @@
-function playmovie_block(block,fix,subj,run,fromTime,nBlocks,blockDur,soundVol,indexisFrames,moviename)
+function play_movie(block,fix,subj,run,fromTime,nBlocks,blockDur,soundVol,indexisFrames,moviename)
 
 %% Usage:
 %
-%   playmovie_block([,block],[,fix],[,subject],[,run],[,fromTime],[,nBlocks],
-%   [,blockDur],[,soundVol],[,indexisFrames],[,moviename])
+%   play_movie(block,fix,subj,run,fromTime,nBlocks,blockDur,soundVol,indexisFrames,moviename)
 %
 %   defaults:
-%       block = 0; % just move (block = 1; movie and gray screen blocks)
+%       block = 0; % just movie (block = 1; movie and gray screen blocks)
 %       fix = 0; % no fixation cross (fix = 1; fixation cross present)
 %       subject = 'test' % subject name
-%       run = '999' % runNum (e.g. 1)
+%       run = 999 % runNum (e.g. 1)
 %       fromTime = 0; % start time of movie
 %       nBlocks = 1; % number of times to loop
 %       blockDur = 60; % duration of block (in seconds)
 %       soundVol = 0; % can be a value between 0 (off) and 1 (full volume)
-%       indexisFrames = 0;
-%       moviename = '/Users/abock/Downloads/Raiders/Raiders.mp4';
+%       indexisFrames = 0; % '1' changes the index from seconds to movie frames
+%       moviename = '/Users/abock/Downloads/ALL.mov'; % pixar shorts
 %
 %   Note: currently coded to record triggers for TRs > 0.5s.
 %
 %   Written by Andrew S Bock Mar 2014
+%% Initial settings
 PsychDefaultSetup(2);
 Screen('Preference', 'SkipSyncTests', 2); % Skip sync tests
-AssertOpenGL
 %% keyboard variables
 %   Switch KbName into unified mode: It will use the names of the OS-X
 %   platform on all platforms in order to make this script portable:
 KbName('UnifyKeyNames');
 esc=KbName('ESCAPE');
-space=KbName('SPACE');
-right=KbName('RightArrow');
-left=KbName('LeftArrow');
-trigger=KbName('t');
 %% Stimulus variables
 if nargin<1
     block = 0;
@@ -65,7 +60,9 @@ end
 if nargin<10
     %moviename = '/Users/abock/Desktop/MRI/The_Artist_2011_1080p/The_Artist_2011_1080p.mp4';
     %moviename = '/Users/abock/Downloads/Raiders/Raiders.mp4';
-    moviename = '/Users/abock/Downloads/ALL.mkv';
+    %moviename = '/Users/abock/Downloads/ALL.mov';
+    moviename = '/Users/abock/PixarShorts.mov';
+    %moviename = [PsychtoolboxRoot 'PsychDemos/MovieDemos/DualDiscs.mov'];
     %moviename = '/Users/abock/Downloads/The_Artist_2011_1080p/The_Artist_2011_1080p.mp4';
     %moviename = '/Users/abock/Desktop/The_Artist_2011_1080p/The_Artist_2011_1080p_flip_lr.mov';
 end
@@ -108,15 +105,19 @@ Screen('Flip',win);
 HideCursor;
 commandwindow;
 %ListenChar(2);
-[movie movieduration fps imgw imgh]=Screen('OpenMovie',win,moviename);
-%% Wait for trigger from scanner
-key = trigger+1; % set key to NOT equal trigger
-while key ~= trigger;
-    [keyIsDown, secs, keyCode, ~] = KbCheck(-3);
-    if keyIsDown
-        key = find(keyCode);
-    end
+%% For Trigger
+a = cd;
+if a(1)=='/' % mac or linux
+    a = PsychHID('Devices');
+    for i = 1:length(a), d(i) = strcmp(a(i).usageName, 'Keyboard'); end
+    keybs = find(d);
+else % windows
+    keybs = [];
 end
+commandwindow
+%%
+[movie]=Screen('OpenMovie',win,moviename);
+wait4T(keybs);  %wait for 't' from scanner.
 TRct = 1; % first TRTime already recorded (first TR starts the movie)
 data.startTime = GetSecs();
 data.startDate = now;
@@ -276,8 +277,7 @@ clear Screen; % Clear the screen
 Screen('CloseAll');sca; % Close the screen
 ShowCursor;
 ListenChar;
-if ~exist(fullfile('~/Desktop/MRI',[subj '_' date]),'dir')
-    mkdir(fullfile('~/Desktop/MRI',[subj '_' date]));
+if ~exist(fullfile('~/Desktop/movie_data',[subj '_' date]),'dir')
+    mkdir(fullfile('~/Desktop/movie_data',[subj '_' date]));
 end
 save(fullfile('~/Desktop/MRI',[subj '_' date],['run' num2str(run)]),'data','-v7.3');
-clear all;close all;clear mex;
