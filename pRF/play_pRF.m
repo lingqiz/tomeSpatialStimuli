@@ -58,7 +58,9 @@ screenid = max(screens); % draw to the external screen
 a = cd;
 if a(1)=='/' % mac or linux
     a = PsychHID('Devices');
-    for i = 1:length(a), d(i) = strcmp(a(i).usageName, 'Keyboard'); end
+    for i = 1:length(a)
+        d(i) = strcmp(a(i).usageName, 'Keyboard');
+    end
     keybs = find(d);
 else % windows
     keybs = [];
@@ -133,7 +135,7 @@ try
             end
         end
         % Display 8 frames / TR
-        if abs((elapsedTime / (TR / 8 )) - curFrame) > 0 %(TR / 6)
+        if abs((elapsedTime / (TR / 8 )) - curFrame) > 0
             curFrame = ceil( elapsedTime / (TR / 8 ));
         end
         % carrier
