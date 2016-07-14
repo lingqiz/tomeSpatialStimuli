@@ -1,37 +1,62 @@
-function playFlash(outFile,stimFreq,stimDur,blockDur)
+function play_flash(paramFile,stimFreq,stimDur,blockDur,tChar,minTR)
+
 %% Displays a black/white full-field flicker
 %
 %   Usage:
-%   playFlash(outFile,stimFreq,stimDur,blockDur)
+%   play_flash(paramFile,stimFreq,stimDur,blockDur)
 %
 %   Inputs:
-%   outFile     - full path to output file containing timing of events, etc
+%   paramFile   - full path to output file containing timing of events, etc
 %   stimFreq    - stimulus flicker frequency    (default = 16   [hertz])
 %   stimDur     - duration of entire stimulus   (default = 336  [seconds])
 %   blockDur    - duration of stimulus blocks   (default = 12   [seconds])
+%   tChar           = {'t'}; % character(s) to signal a scanner trigger
+%   minTR       - minimum time allowed between TRs (for use with recording triggers) (default = 0.25 [seconds])
 %
-%   Stimulus will flicker at 16Hz, occilating between flicker and and grey 
-%   screen based on 'blockDur'
+%   Stimulus will flicker at 'stimFreq', occilating between flicker and
+%   grey screen based on 'blockDur'
 %
 %   Written by Andrew S Bock Jul 2016
 
 %% Set defaults
+% Get git repository information
+fCheck = which('GetGitInfo');
+if ~isempty(fCheck)
+    thePath = fileparts(mfilename('fullpath'));
+    gitInfo = GetGITInfo(thePath);
+else
+    gitInfo = 'function ''GetGITInfo'' not found';
+end
+% Get user name
+[~, userName] = system('whoami');
+userName = strtrim(userName);
+% stimulus frequency
 if ~exist('stimFreq','var')
     stimFreq = 16; % seconds
 end
+% stimulus duration
 if ~exist('stimDur','var')
     stimDur = 336; % seconds
 end
+% block duration
 if ~exist('blockDur','var')
     blockDur = 12; % seconds
 end
-if ~exist('display','var')
-    display.distance = 106.5; % distance from screen (cm) - (SC3T);  124.25 - (HUP6)
-    display.width = 69.7347; % width of screen (cm) - (SC3T); 50.4 - (HUP6)
-    display.skipChecks = 2;
-    display.bkColor = [128 128 128];
-    display.screenNum = max(Screen('Screens'));
+% scanner trigger
+if ~exist('tChar','var') || isempty(tChar)
+    tChar = {'t'};
 end
+% minimum time between TRs
+if ~exist('minTR','var') || isempty(minTR)
+    minTR = 0.25;
+end
+%% Save input variables
+params.functionName     = mfilename;
+params.gitInfo          = gitInfo;
+params.userName         = userName;
+params.stimFreq         = stimFreq;
+params.stimDur          = stimDur;
+params.blockDur         = blockDur;
 %% Initial settings
 PsychDefaultSetup(2);
 Screen('Preference', 'SkipSyncTests', 2); % Skip sync tests
@@ -57,19 +82,13 @@ res = Screen('Resolution',max(Screen('screens')));
 display.resolution = [res.width res.height];
 PsychImaging('PrepareConfiguration');
 PsychImaging('AddTask', 'General', 'UseRetinaResolution');
-[winPtr, windowRect] = PsychImaging('OpenWindow', screenid, grey);
+[winPtr] = PsychImaging('OpenWindow', screenid, grey);
 [mint,~,~] = Screen('GetFlipInterval',winPtr,200);
 display.frameRate = 1/mint; % 1/monitor flip interval = framerate (Hz)
-display.screenAngle = pix2angle( display, display.resolution );
-%rect = Screen('Rect', winPtr );
-[screenXpix, screenYpix] = Screen('WindowSize', winPtr);% Get the size of the on screen window
-display.resolution = [screenXpix screenYpix];
-[center(1), center(2)] = RectCenter(windowRect); % Get the center coordinate of the window
-fix_dot = angle2pix(display,0.25); % For fixation cross (0.25 degree)
 %% Make images
-greyScreen = grey*ones(display.resolution);
-blackScreen = black*ones(display.resolution);
-whiteScreen = white*ones(display.resolution);
+greyScreen = grey*ones(fliplr(display.resolution));
+blackScreen = black*ones(fliplr(display.resolution));
+whiteScreen = white*ones(fliplr(display.resolution));
 Texture(1) = Screen('MakeTexture', winPtr, blackScreen);
 Texture(2) = Screen('MakeTexture', winPtr, whiteScreen);
 Texture(3) = Screen('MakeTexture', winPtr, greyScreen);
@@ -80,36 +99,38 @@ try
     Screen('TextSize',winPtr,40);
     DrawFormattedText(winPtr, 'SCAN STARTING SOON, HOLD STILL!!!', ...
         'center',display.resolution(2)/3,[],[],[],[],[],0);
-    Screen('DrawDots', winPtr, [0;0], fix_dot,black, center, 1);
     Screen('Flip',winPtr);
+    soundsc(sin(1:.5:1000)); % play 'ready' tone
     wait4T(keybs);  %wait for 't' from scanner.
+    ListenChar(2);
+    HideCursor;
     %% Drawing Loop
     breakIt = 0;
     frameCt = 0;
-    curTR = 1;
+    TRct = 1;
     startTime = GetSecs;  %read the clock
     curFrame = 0;
-    stim.startTime = startTime;
-    stim.TRtime(curTR) = GetSecs;
-    disp(['T ' num2str(curTR) ' received - 0 seconds']);
+    params.startDateTime    = datestr(now);
+    params.endDateTime      = datestr(now); % this is updated below
+    params.TRtime(TRct) = GetSecs;
+    disp(['T ' num2str(TRct) ' received - 0 seconds']);
     lastT = startTime;
-    while GetSecs-startTime < stimDur && ~breakIt  %loop until 'esc' pressed or time runs out
-        % update timers
-        elapsedTime = GetSecs-startTime;
+    elapsedTime = 0;
+    while elapsedTime < stimDur && ~breakIt  %loop until 'esc' pressed or time runs out
         % get 't' from scanner
         [keyIsDown, secs, keyCode, ~] = KbCheck(-3);
         if keyIsDown % If *any* key is down
             % If 't' is one of the keys being pressed
-            if ismember(KbName('t'),find(keyCode))
-                if (secs-lastT) > 0.25
-                    curTR = curTR + 1;
-                    stim.TRtime(curTR) = GetSecs;
-                    disp(['T ' num2str(curTR) ' received - ' num2str(elapsedTime) ' seconds']);
+            if sum(ismember(KbName(tChar),find(keyCode)))
+                if (secs-lastT) > minTR
+                    TRct = TRct + 1;
+                    params.TRtime(TRct) = GetSecs;
+                    disp(['T ' num2str(TRct) ' received - ' num2str(elapsedTime) ' seconds']);
                     lastT = secs;
                 end
             end
         end
-        % Flip between grey and flicker 
+        % Flip between grey and flicker
         thisblock = floor(elapsedTime/blockDur);
         if mod(thisblock,2)
             if (elapsedTime - curFrame) > (1/(stimFreq*2))
@@ -124,18 +145,23 @@ try
             % Flip to the screen
             Screen('Flip', winPtr);
         end
+        % update timers
+        elapsedTime = GetSecs-startTime;
+        params.endDateTime = datestr(now);
         % check to see if the "esc" button was pressed
         breakIt = escPressed(keybs);
     end
     sca;
+    disp(['elapsedTime = ' num2str(elapsedTime)]);
+    ListenChar(1);
+    ShowCursor;
+    Screen('CloseAll');
+    %% Save params
+    params.display = display;
+    save(paramFile,'params');
 catch ME
     Screen('CloseAll');
     ListenChar;
     ShowCursor;
     rethrow(ME);
 end
-disp(['elapsedTime = ' num2str(elapsedTime)]);
-ListenChar(1);
-ShowCursor;
-Screen('CloseAll');
-save(outFile,'stim');

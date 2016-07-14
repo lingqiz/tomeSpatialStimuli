@@ -1,32 +1,68 @@
-function play_pRF(subj,runNum,images,TR,scanDur,display,redFrames)
+function play_pRF(paramFile,imagesFull,TR,scanDur,display,tChar,rChar,minTR)
 
 %% Play pRF movie stimuli
-%   'images' input created using 'make_bars.m'
+%   'imagesFull' input created using 'make_bars.m'
 %
 %   Usage:
-%   outFile     = '/path/to/some/dir/outFile.mat'; % output image file
-%   images      = make_bars(outFile);
-%   play_pRF(subj,runNum,images,TR,scanDur,display,redFrames);
+%   play_pRF(outFile,imagesFull,TR,scanDur,display,redFrames,minTR)
+%
+%   Defaults:
+%   TR                  = 0.8; % TR (seconds)
+%   scanDur             = 336: % scan duration (seconds)
+%   display.distance    = 106.5; % distance from screen (cm) - (UPenn - SC3T);
+%   display.width       = 69.7347; % width of screen (cm) - (UPenn - SC3T);
+%   tChar               = {'t'}; % character(s) to signal a scanner trigger
+%   rChar               = {'r' 'g' 'b' 'y'}; % character(s) to signal a button response
+%   minTR               = 0.25; % minimum time allowed between TRs (for use with recording triggers)
 %
 %   Written by Andrew S Bock Aug 2014
 
 %% Set defaults
-if ~exist('TR','var')
+% Get git repository information
+fCheck = which('GetGitInfo');
+if ~isempty(fCheck)
+    thePath = fileparts(mfilename('fullpath'));
+    gitInfo = GetGITInfo(thePath);
+else
+    gitInfo = 'function ''GetGITInfo'' not found';
+end
+% Get user name
+[~, userName] = system('whoami');
+userName = strtrim(userName);
+% TR
+if ~exist('TR','var') || isempty(TR)
     TR = 0.8;
 end
-if ~exist('scanDur','var')
+% scan duration
+if ~exist('scanDur','var') || isempty(scanDur)
     scanDur = 336; % seconds
 end
-if ~exist('display','var')
-    display.distance = 106.5; % distance from screen (cm) - (SC3T);  124.25 - (HUP6)
-    display.width = 69.7347; % width of screen (cm) - (SC3T); 50.4 - (HUP6)
-    display.skipChecks = 2;
-    display.bkColor = [128 128 128];
-    display.screenNum = max(Screen('Screens'));
+% dispaly parameters
+if ~exist('display','var') || isempty(display)
+    display.distance = 106.5; % distance from screen (cm) - (UPenn - SC3T);
+    display.width = 69.7347; % width of screen (cm) - (UPenn - SC3T);
 end
-% Make fixation dot color changes
-if ~exist('redFrames','var')
-    maxFrames = size(images,3);
+% scanner trigger
+if ~exist('tChar','var') || isempty(tChar)
+    tChar = {'t'};
+end
+% scanner trigger
+if ~exist('rChar','var') || isempty(rChar)
+    rChar = {'r' 'g' 'b' 'y'};
+end
+% minimum time between TRs
+if ~exist('minTR','var') || isempty(minTR)
+    minTR = 0.25;
+end
+%% Save input variables
+params.functionName     = mfilename;
+params.gitInfo          = gitInfo;
+params.userName         = userName;
+params.TR               = TR;
+params.scanDur          = scanDur;
+%% Make fixation dot color changes
+if ~exist('redFrames','var') || isempty(redFrames)
+    maxFrames = size(imagesFull,3);
     redFrames = zeros(1,maxFrames);
     minDiff = 0;
     while minDiff < ceil(4*TR*8); % dot color changes are separated by at least 4 TRs
@@ -34,6 +70,8 @@ if ~exist('redFrames','var')
         minDiff = min(diff(switches));
     end
     ct = 0;
+    % Make a vector of 0's (green) and 1's (red), to use for chaging the
+    %   color of the fixation dot
     for i = 1:length(switches)
         if ct
             if i ~= length(switches)
@@ -48,7 +86,7 @@ if ~exist('redFrames','var')
         end
     end
 end
-stim.redFrames = redFrames;
+params.redFrames = redFrames;
 %% Initial settings
 PsychDefaultSetup(2);
 Screen('Preference', 'SkipSyncTests', 2); % Skip sync tests
@@ -79,9 +117,7 @@ PsychImaging('AddTask', 'General', 'UseRetinaResolution');
 [mint,~,~] = Screen('GetFlipInterval',winPtr,200);
 display.frameRate = 1/mint; % 1/monitor flip interval = framerate (Hz)
 display.screenAngle = pix2angle( display, display.resolution );
-%rect = Screen('Rect', winPtr );
 [screenXpix, screenYpix] = Screen('WindowSize', winPtr);% Get the size of the on screen window
-display.resolution = [screenXpix screenYpix];
 [center(1), center(2)] = RectCenter(windowRect); % Get the center coordinate of the window
 fix_mask = angle2pix(display,0.75); % For fixation mask (0.75 degree)
 fix_dot = angle2pix(display,0.25); % For fixation cross (0.25 degree)
@@ -89,8 +125,8 @@ fix_dot = angle2pix(display,0.25); % For fixation cross (0.25 degree)
 % Set the blend function so that we get nice antialised edges
 Screen('BlendFunction', winPtr, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 %% stimulus specific params
-for i = 1:size(images,3);
-    tmp = images(:,:,i);
+for i = 1:size(imagesFull,3);
+    tmp = imagesFull(:,:,i);
     Texture(i) = Screen('MakeTexture', winPtr, tmp);
 end
 try
@@ -102,6 +138,7 @@ try
         'center',display.resolution(2)/3,[],[],[],[],[],0);
     Screen('DrawDots', winPtr, [0;0], fix_dot,black, center, 1);
     Screen('Flip',winPtr);
+    soundsc(sin(1:.5:1000)); % play 'ready' tone
     wait4T(keybs);  %wait for 't' from scanner.
     ListenChar(2);
     HideCursor;
@@ -111,11 +148,12 @@ try
     Rct = 0;
     Gct = 0;
     curFrame = 1;
-    curTR = 1;
+    TRct = 1;
     startTime = GetSecs;  %read the clock
-    stim.startTime = startTime;
-    stim.TRtime(curTR) = GetSecs;
-    disp(['T ' num2str(curTR) ' received']);
+    params.startDateTime    = datestr(now);
+    params.endDateTime      = datestr(now); % this is updated below
+    params.TRtime(TRct) = GetSecs;
+    disp(['T ' num2str(TRct) ' received - 0 seconds']);
     lastT = startTime;
     lastR = startTime;
     while GetSecs-startTime < scanDur && ~breakIt  %loop until 'esc' pressed or time runs out
@@ -125,11 +163,11 @@ try
         [keyIsDown, secs, keyCode, ~] = KbCheck(-3);
         if keyIsDown % If *any* key is down
             % If 't' is one of the keys being pressed
-            if ismember(KbName('t'),find(keyCode))
-                if (secs-lastT) > 0.25
-                    curTR = curTR + 1;
-                    stim.TRtime(curTR) = GetSecs;
-                    disp(['T ' num2str(curTR) ' received']);
+            if sum(ismember(KbName(tChar),find(keyCode)))
+                if (secs-lastT) > minTR
+                    TRct = TRct + 1;
+                    params.TRtime(TRct) = GetSecs;
+                    disp(['T ' num2str(TRct) ' received - ' num2str(elapsedTime) ' seconds']);
                     lastT = secs;
                 end
             end
@@ -145,11 +183,11 @@ try
             screenYpix/2-fix_mask/2,screenXpix/2+fix_mask/2,screenYpix/2+fix_mask/2]);
         if redFrames(curFrame)
             Rct = Rct + 1;
-            stim.RFrame(Rct) = GetSecs;
+            params.RedTime(Rct) = GetSecs;
             Screen('DrawDots', winPtr, [0;0], fix_dot, [1 0 0], center, 1);
         else
             Gct = Gct + 1;
-            stim.GFrame(Gct) = GetSecs;
+            params.GreenTime(Gct) = GetSecs;
             Screen('DrawDots', winPtr, [0;0], fix_dot, [0 1 0], center, 1);
         end
         % Flip to the screen
@@ -158,30 +196,30 @@ try
         [keyIsDown, secs, keyCode, ~] = KbCheck(-3);
         if keyIsDown % If *any* key is down
             % If r is one of the keys being pressed
-            if ismember(KbName('r'),find(keyCode))
-                if (secs-lastR) > 0.25
+            if sum(ismember(KbName(rChar),find(keyCode)))
+                if (secs-lastR) > minTR
                     Keyct = Keyct+1;
                     lastR = secs;
-                    stim.RT(Keyct) = GetSecs;
-                    disp(['R ' num2str(Keyct) ' received']);
+                    params.RT(Keyct) = GetSecs;
+                    disp(['Response ' num2str(Keyct) ' received']);
                 end
             end
         end
+        params.endDateTime = datestr(now);
         % check to see if the "esc" button was pressed
         breakIt = escPressed(keybs);
     end
     sca;
+    disp(['elapsedTime = ' num2str(elapsedTime)]);
+    ListenChar(1);
+    ShowCursor;
+    Screen('CloseAll');
+    %% Save params
+    params.display = display;
+    save(paramFile,'params');
 catch ME
     Screen('CloseAll');
-    ListenChar;
+    ListenChar(1);
     ShowCursor;
     rethrow(ME);
 end
-disp(['elapsedTime = ' num2str(elapsedTime)]);
-ListenChar(1);
-ShowCursor;
-Screen('CloseAll');
-if ~exist(fullfile('~/Desktop/pRF_data',[subj '_' date]),'dir')
-    mkdir(fullfile('~/Desktop/pRF_data',[subj '_' date]));
-end
-save(fullfile('~/Desktop/pRF_data',[subj '_' date],['run' num2str(runNum)]),'stim');

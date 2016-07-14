@@ -1,283 +1,174 @@
-function play_movie(block,fix,subj,run,fromTime,nBlocks,blockDur,soundVol,indexisFrames,moviename)
+function play_movie(paramFile,movieName,movieTime,indexisFrames,soundVol,tChar,minTR)
 
 %% Usage:
 %
-%   play_movie(block,fix,subj,run,fromTime,nBlocks,blockDur,soundVol,indexisFrames,moviename)
+%   play_movie(paramFile,movieName,movieTime,indexisFrames,soundVol,minTR)
 %
 %   defaults:
-%       block = 0; % just movie (block = 1; movie and gray screen blocks)
-%       fix = 0; % no fixation cross (fix = 1; fixation cross present)
-%       subject = 'test' % subject name
-%       run = 999 % runNum (e.g. 1)
-%       fromTime = 0; % start time of movie
-%       nBlocks = 1; % number of times to loop
-%       blockDur = 60; % duration of block (in seconds)
-%       soundVol = 0; % can be a value between 0 (off) and 1 (full volume)
-%       indexisFrames = 0; % '1' changes the index from seconds to movie frames
-%       moviename = '/Users/abock/Downloads/ALL.mov'; % pixar shorts
-%
-%   Note: currently coded to record triggers for TRs > 0.5s.
+%   movieName       = '/Users/abock/PixarShorts.mov'; % pixar shorts
+%   subjName        = 'test' % subject name
+%   runNum          = 999 % runNum (e.g. 1)
+%   movieTime       = [0 30]; % [start end] time of movie
+%   endTime         = 30; % start time of movie
+%   indexisFrames   = 0; % '1' changes the index from seconds to movie frames
+%   soundVol        = 0; % can be a value between 0 (off) and 1 (full volume)
+%   tChar           = {'t'}; % character(s) to signal a scanner trigger
+%   minTR           = 0.25; % minimum time allowed between TRs (for use with recording triggers)
 %
 %   Written by Andrew S Bock Mar 2014
+
+%% Set defaults
+% Get git repository information
+fCheck = which('GetGitInfo');
+if ~isempty(fCheck)
+    thePath = fileparts(mfilename('fullpath'));
+    gitInfo = GetGITInfo(thePath);
+else
+    gitInfo = 'function ''GetGITInfo'' not found';
+end
+% Get user name
+[~, userName] = system('whoami');
+userName = strtrim(userName);
+% movieName
+if ~exist('movieName','var') || isempty(movieName)
+    movieName = fullfile('/Users',userName,'PixarShorts.mov');
+end
+% movie start and end time
+if ~exist('movieTime','var') || isempty(movieTime)
+    movieTime = [0 30]; % [start end];
+end
+% time index (frames or seconds)
+if ~exist('indexisFrames','var') || isempty(indexisFrames)
+    indexisFrames = 0;
+end
+% sound volume
+if ~exist('soundVol','var') || isempty(soundVol)
+    soundVol = 0;
+end
+% scanner trigger
+if ~exist('tChar','var') || isempty(tChar)
+    tChar = {'t'};
+end
+% minimum time between TRs
+if ~exist('minTR','var') || isempty(minTR)
+    minTR = 0.25;
+end
+%% Save input variables
+params.functionName     = mfilename;
+params.gitInfo          = gitInfo;
+params.userName         = userName;
+params.movieName        = movieName;
+params.movieTime        = movieTime;
+params.indexisFrames    = indexisFrames;
+params.soundVol         = soundVol;
 %% Initial settings
 PsychDefaultSetup(2);
 Screen('Preference', 'SkipSyncTests', 2); % Skip sync tests
-%% keyboard variables
-%   Switch KbName into unified mode: It will use the names of the OS-X
-%   platform on all platforms in order to make this script portable:
-KbName('UnifyKeyNames');
-esc=KbName('ESCAPE');
-%% Stimulus variables
-if nargin<1
-    block = 0;
-end
-if nargin<2
-    fix = 0;
-end
-if nargin<3
-    subj = 'test';
-end
-if nargin<4
-    run = 999;
-end
-if nargin<5
-    fromTime = 0;
-end
-if nargin<6
-    nBlocks = 1;
-end
-if nargin<7
-    blockDur = 60;
-end
-if nargin<8
-    soundVol = 0;
-end
-if nargin<9
-    indexisFrames = 0; % If set to 1 then the fromTime and toTime parameters are
-    % interpreted as frameindex (starting with 0 for the first frame), instead
-    % of seconds.
-end
-if nargin<10
-    %moviename = '/Users/abock/Desktop/MRI/The_Artist_2011_1080p/The_Artist_2011_1080p.mp4';
-    %moviename = '/Users/abock/Downloads/Raiders/Raiders.mp4';
-    %moviename = '/Users/abock/Downloads/ALL.mov';
-    moviename = '/Users/abock/PixarShorts.mov';
-    %moviename = [PsychtoolboxRoot 'PsychDemos/MovieDemos/DualDiscs.mov'];
-    %moviename = '/Users/abock/Downloads/The_Artist_2011_1080p/The_Artist_2011_1080p.mp4';
-    %moviename = '/Users/abock/Desktop/The_Artist_2011_1080p/The_Artist_2011_1080p_flip_lr.mov';
-end
-
-if block == 0
-    blocktype = 'just movie';
-else
-    blocktype = 'movie and gray screen';
-end
-if fix == 1
-    fixtype = 'fixation cross present';
-else
-    fixtype = 'no fixation cross present';
-end
-data.moviename = moviename;
-data.fromTime = fromTime;
-data.nBlocks = nBlocks;
-data.blockDur = blockDur;
-data.soundVol = soundVol;
-data.blocktype = blocktype;
-data.fixtype = fixtype;
-%% Set up Initial Screen
-
-res = Screen('Resolution',max(Screen('screens')));
-
-s.size = [10,20,24,5,28]; % pixels sizes
-s.gap = 3; %pixels
-s.c = ceil([res.width res.height]/2);
-for i=1:length(s.size)
-    s.rect{i} = [-s.size(i)/2+s.c(1),-s.size(i)/2+s.c(2),+s.size(i)/2+s.c(1),+s.size(i)/2+s.c(2)];
-end
-
-[win,~]=Screen('OpenWindow',max(Screen('screens')),0);
-background = [128,128,128]; % Set background color
-Screen('FillRect',win, background);
-Screen('TextSize',win,40);
-DrawFormattedText(win, 'SCAN STARTING SOON, HOLD STILL!!!', ...
-    'center',res.height/3,[],[],[],[],[],0);
-Screen('Flip',win);
-HideCursor;
-commandwindow;
-%ListenChar(2);
+screens = Screen('Screens'); % get the number of screens
+screenid = max(screens); % draw to the external screen
 %% For Trigger
 a = cd;
 if a(1)=='/' % mac or linux
     a = PsychHID('Devices');
-    for i = 1:length(a), d(i) = strcmp(a(i).usageName, 'Keyboard'); end
+    for i = 1:length(a)
+        d(i) = strcmp(a(i).usageName, 'Keyboard');
+    end
     keybs = find(d);
 else % windows
     keybs = [];
 end
-commandwindow
-%%
-[movie]=Screen('OpenMovie',win,moviename);
-wait4T(keybs);  %wait for 't' from scanner.
-TRct = 1; % first TRTime already recorded (first TR starts the movie)
-data.startTime = GetSecs();
-data.startDate = now;
-data.flipTime(1) = data.startTime;
-data.flipDate(1) = data.startDate;% first flipTime is PlayMovie
-data.TRTime(1) = data.startTime; % first flipTime is PlayMovie
-data.TRDate(1) = data.startDate;
+%% Define black and white
+black = BlackIndex(screenid);
+white = WhiteIndex(screenid);
+grey = white/2;
+%% Screen params
+res = Screen('Resolution',max(Screen('screens')));
+display.resolution = [res.width res.height];
+PsychImaging('PrepareConfiguration');
+PsychImaging('AddTask', 'General', 'UseRetinaResolution');
+[winPtr] = PsychImaging('OpenWindow', screenid, grey);
+[mint,~,~] = Screen('GetFlipInterval',winPtr,200);
+display.frameRate = 1/mint; % 1/monitor flip interval = framerate (Hz)
+%% Play the movie
 try
-    for B = 1:nBlocks
-        tic
-        %% Play movie
-        if B == 1
-            data.blockTimes = now;
+    commandwindow;
+    % Display Text, wait for Trigger
+    Screen('FillRect',winPtr, grey);
+    Screen('TextSize',winPtr,40);
+    DrawFormattedText(winPtr, 'SCAN STARTING SOON, HOLD STILL!!!', ...
+        'center',display.resolution(2)/3,[],[],[],[],[],0);
+    Screen('Flip',winPtr);
+    ListenChar(2);
+    HideCursor;
+    % Setup movie
+    [movieObj]=Screen('OpenMovie',winPtr,movieName);
+    % Move to requested timeindex where texture loading should start:
+    Screen('SetMovieTimeIndex', movieObj, movieTime(1), indexisFrames);
+    Screen('PlayMovie',movieObj,1,0,soundVol);
+    % Wait for trigger
+    soundsc(sin(1:.5:1000)); % play 'ready' tone
+    wait4T(keybs);  %wait for 't' from scanner.
+    % Save params
+    TRct = 1; % first TRTime already recorded (first TR starts the movie)
+    disp(['T ' num2str(TRct) ' received - 0 seconds']);
+    breakIt = 0;
+    params.startDateTime    = datestr(now);
+    params.endDateTime      = datestr(now); % this is updated below
+    params.ScreenflipTime(1)  = GetSecs();
+    params.TRTime(1)    = GetSecs(); % first flipTime is PlayMovie
+    lastFrame=-1;           % Presentation timestamp of last frame.
+    frameCt=0;              % Number of loaded movie frames.
+    flipct = 1; % first flipTime is PlayMovie
+    startTime = GetSecs;  %read the clock
+    elapsedTime = 0;
+    while elapsedTime < (movieTime(2) - movieTime(1)) && ~breakIt  %loop until 'esc' pressed or time runs out
+        % get 't' from scanner
+        [keyIsDown, secs, keyCode, ~] = KbCheck(-3);
+        if keyIsDown % If *any* key is down
+            % If t is one of the keys being pressed
+            if sum(ismember(KbName(tChar),find(keyCode)))
+                if (secs-params.TRTime(end)) > minTR
+                    TRct = TRct+1;
+                    params.TRTime(TRct) = secs;
+                    disp(['T ' num2str(TRct) ' received - ' num2str(elapsedTime) ' seconds']);
+                end
+            end
+        end
+        [frameTexture,frameTime] = Screen('GetMovieImage', winPtr, movieObj, 1);
+        if (frameTexture>0 && frameTime>lastFrame)
+            % Store its texture handle and exact movie timestamp in
+            % arrays for later use:
+            frameCt                         = frameCt + 1;
+            params.frameTime(frameCt)       = frameTime;
+            lastFrame=frameTime;
         else
-            data.blockTimes = [data.blockTimes now];
-        end
-        % Move to requested timeindex where texture loading should start:
-        Screen('SetMovieTimeIndex', movie, fromTime+blockDur/2*(B-1), indexisFrames);
-        lastpts=-1;          % Presentation timestamp of last frame.
-        count=0;            % Number of loaded movie frames.
-        Screen('PlayMovie',movie,1,0,soundVol);
-        if B == 1
-            flipct = 1; % first flipTime is PlayMovie
-        end
-        if block == 0;
-            while (toc < blockDur)
-                [keyIsDown, secs, keyCode, ~] = KbCheck(-3);
-                if keyIsDown % If *any* key is down
-                    % If t is one of the keys being pressed
-                    if (ismember(KbName('t'),find(keyCode)))
-                        if (secs-data.TRTime(end)) > 0.5
-                            TRct = TRct+1;
-                            data.TRTime(TRct) = secs;
-                            data.TRDate(TRct) = now;
-                            fprintf('*** T received ***\n');
-                        end
-                    elseif (ismember(esc,find(keyCode)))
-                        Screen('PlayMovie',movie,0); % Stop Movie
-                        Screen('CloseMovie',movie); % Close Move
-                        clear Screen; % Clear the screen
-                        Screen('CloseAll');sca; % Close the screen
-                        ShowCursor;
-                        ListenChar(1);
-                        return
-                    end
-                end
-                [movietexture,pts] = Screen('GetMovieImage', win, movie, 1);
-                if (movietexture>0 && pts>lastpts)
-                    % Store its texture handle and exact movie timestamp in
-                    % arrays for later use:
-                    count=count + 1;
-                    data.texids(count)=movietexture;
-                    data.texpts(count)=pts;
-                    lastpts=pts;
-                else
-                    ShowCursor;
-                    ListenChar(1);
-                    return;
-                end;
-                Screen('DrawTexture',win,movietexture,[],[0 0 res.width res.height]);
-                if fix == 1
-                    Screen('FillOval',win,[0,0,0],s.rect{5}); % background of outer fixation circle
-                    Screen('FillOval',win,[255,255,255],s.rect{3}); % background of inner fixation circle
-                    Screen('FillRect',win,[0,0,0],[s.c(1)-s.size(2)/2,s.c(2)-s.gap/2,s.c(1)+s.size(2)/2,s.c(2)+s.gap/2]); %horizontal bar in cross
-                    Screen('FillRect',win,[0,0,0],[s.c(1)-s.gap/2,s.c(2)-s.size(2)/2,s.c(1)+s.gap/2,s.c(2)+s.size(2)/2]); %vertical bar in cross
-                    Screen('FillOval',win,[0,0,0],s.rect{1}); % small center circle, around center dot
-                    Screen('FillOval',win,[255,0,0],s.rect{4}); % center dot
-                end
-                flipTime = Screen('Flip',win);
-                flipct = flipct+1;
-                data.flipTime(flipct) = flipTime;
-                data.flipDate(flipct) = now;
-                Screen('Close',movietexture);
-            end
-        else
-            while (toc < blockDur/2)
-                [keyIsDown, secs, keyCode, ~] = KbCheck(-3);
-                if keyIsDown % If *any* key is down
-                    % If t is one of the keys being pressed
-                    if (ismember(KbName('t'),find(keyCode)))
-                        if (secs-data.TRTime(end)) > 0.5
-                            TRct = TRct+1;
-                            data.TRTime(TRct) = secs;
-                            data.TRDate(TRct) = now;
-                            fprintf('*** T received ***\n');
-                        end
-                    elseif (ismember(esc,find(keyCode)))
-                        Screen('PlayMovie',movie,0); % Stop Movie
-                        Screen('CloseMovie',movie); % Close Move
-                        clear Screen; % Clear the screen
-                        Screen('CloseAll');sca; % Close the screen
-                        ShowCursor;
-                        ListenChar(1);
-                        return
-                    end
-                end
-                [movietexture,pts] = Screen('GetMovieImage', win, movie, 1);
-                if (movietexture>0 && pts>lastpts)
-                    % Store its texture handle and exact movie timestamp in
-                    % arrays for later use:
-                    count=count + 1;
-                    data.texids(count)=movietexture;
-                    data.texpts(count)=pts;
-                    lastpts=pts;
-                else
-                    ShowCursor;
-                    ListenChar(1);
-                    return;
-                end;
-                Screen('DrawTexture',win,movietexture,[],[0 0 res.width res.height]);
-                flipTime = Screen('Flip',win);
-                flipct = flipct+1;
-                data.flipTime(flipct) = flipTime;
-                data.flipDate(flipct) = now;
-                Screen('Close',movietexture);
-            end
-            background = [128,128,128]; % Set background color
-            Screen('FillRect',win, background);
-            Screen('Flip',win);
-            data.blockTimes = [data.blockTimes now];
-            while (toc < blockDur)
-                [keyIsDown, secs, keyCode, ~] = KbCheck(-3);
-                if keyIsDown % If *any* key is down
-                    % If t is one of the keys being pressed
-                    if (ismember(KbName('t'),find(keyCode)))
-                        if (secs-data.TRTime(end)) > 0.5
-                            TRct = TRct+1;
-                            data.TRTime(TRct) = secs;
-                            data.TRDate(TRct) = now;
-                            fprintf('*** T received ***\n');
-                        end
-                    elseif (ismember(esc,find(keyCode)))
-                        Screen('PlayMovie',movie,0); % Stop Movie
-                        Screen('CloseMovie',movie); % Close Move
-                        clear Screen; % Clear the screen
-                        Screen('CloseAll');sca; % Close the screen
-                        ShowCursor;
-                        ListenChar(1);
-                        return
-                    end
-                end
-            end
-        end
+            ShowCursor;
+            ListenChar(1);
+            return;
+        end;
+        Screen('DrawTexture',winPtr,frameTexture,[],[0 0 res.width res.height]);
+        flipTime = Screen('Flip',winPtr);
+        flipct = flipct+1;
+        params.ScreenflipTime(flipct) = flipTime;
+        Screen('Close',frameTexture);
+        % update timers
+        elapsedTime = GetSecs-startTime;
+        params.endDateTime = datestr(now);
+        % check to see if the "esc" button was pressed
+        breakIt = escPressed(keybs);
     end
-catch ME
-    Screen('PlayMovie',movie,0); % Stop Movie
-    Screen('CloseMovie',movie); % Close Move
-    clear Screen; % Clear the screen
-    Screen('CloseAll');sca; % Close the screen
+    Screen('PlayMovie',movieObj,0); % Stop Movie
+    Screen('CloseMovie',movieObj); % Close Move
+    clear Screen;sca; % Clear the screen
+    disp(['elapsedTime = ' num2str(elapsedTime)]);
+    ListenChar(1);
     ShowCursor;
-    ListenChar;
+    Screen('CloseAll');
+    %% Save params
+    save(paramFile,'params');
+catch ME
+    Screen('CloseAll');
+    ListenChar(1);
+    ShowCursor;
     rethrow(ME);
 end
-Screen('PlayMovie',movie,0); % Stop Movie
-Screen('CloseMovie',movie); % Close Move
-clear Screen; % Clear the screen
-Screen('CloseAll');sca; % Close the screen
-ShowCursor;
-ListenChar;
-if ~exist(fullfile('~/Desktop/movie_data',[subj '_' date]),'dir')
-    mkdir(fullfile('~/Desktop/movie_data',[subj '_' date]));
-end
-save(fullfile('~/Desktop/MRI',[subj '_' date],['run' num2str(run)]),'data','-v7.3');
