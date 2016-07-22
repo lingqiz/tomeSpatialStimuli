@@ -130,9 +130,10 @@ try
                 end
             end
         end
-        % Flip between grey and flicker
+        % Flip between background and flicker
         thisblock = floor(elapsedTime/blockDur);
         if mod(thisblock,2)
+            % flicker
             if (elapsedTime - curFrame) > (1/(stimFreq*2))
                 frameCt = frameCt + 1;
                 Screen( 'DrawTexture', winPtr, Texture( mod(frameCt,2) + 1 )); % current frame
@@ -141,7 +142,8 @@ try
                 curFrame = GetSecs - startTime;
             end
         else
-            Screen( 'DrawTexture', winPtr, Texture( 3 )); % current frame
+            % background
+            Screen( 'DrawTexture', winPtr, Texture( 1 )); % black screen
             % Flip to the screen
             Screen('Flip', winPtr);
         end
