@@ -2,7 +2,7 @@ function play_movie(paramFile,movieName,movieTime,indexisFrames,soundVol,tChar,m
 
 %% Usage:
 %
-%   play_movie(paramFile,movieName,movieTime,indexisFrames,soundVol,minTR)
+%   play_movie(paramFile,movieName,movieTime,indexisFrames,soundVol,tChar,minTR)
 %
 %   defaults:
 %   movieName       = '/Users/abock/PixarShorts.mov'; % pixar shorts
