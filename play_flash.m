@@ -96,9 +96,9 @@ Texture(3) = Screen('MakeTexture', winPtr, greyScreen);
 try
     commandwindow;
     Screen('FillRect',winPtr, grey);
-    Screen('TextSize',winPtr,40);
-    DrawFormattedText(winPtr, 'SCAN STARTING SOON, HOLD STILL!!!', ...
-        'center',display.resolution(2)/3,[],[],[],[],[],0);
+%     Screen('TextSize',winPtr,40);
+%     DrawFormattedText(winPtr, 'SCAN STARTING SOON, HOLD STILL!!!', ...
+%         'center',display.resolution(2)/3,[],[],[],[],[],0);
     Screen('Flip',winPtr);
     soundsc(sin(1:.5:1000)); % play 'ready' tone
     wait4T(keybs);  %wait for 't' from scanner.
