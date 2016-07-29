@@ -48,7 +48,7 @@ end
 %% Get the stimulus type
 runType = input('Which run type? movie/pRF/flash/dMRI/T1/T2:\n','s');
 if isempty(runType)
-    error('no stimulus type!');
+    error('no run type!');
 end
 %% Get the run number
 runNum = input('Run number?:\n','s');
