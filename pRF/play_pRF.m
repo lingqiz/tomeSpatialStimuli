@@ -27,8 +27,19 @@ else
     gitInfo = 'function ''GetGITInfo'' not found';
 end
 % Get user name
-[~, userName] = system('whoami');
-userName = strtrim(userName);
+[~, tmpName] = system('whoami');
+userName = strtrim(tmpName);
+% Set Dropbox directory
+dbDir = ['/Users/' userName '/Dropbox (Aguirre-Brainard Lab)'];
+disp(['Dropbox directory = ' dbDir]);
+% Load images
+if ~exist('imagesFull','var') || isempty(imagesFull)
+    imFile = fullfile(dbDir,'TOME_materials','pRFimages.mat');
+    disp('Loading pRF images file...');
+    tmp = load(imFile);
+    imagesFull = tmp.imagesFull;
+    clear tmp;
+end
 % TR
 if ~exist('TR','var') || isempty(TR)
     TR = 0.8;
@@ -54,7 +65,7 @@ end
 if ~exist('minTR','var') || isempty(minTR)
     minTR = 0.25;
 end
-%% Save input variables
+% Save input variables
 params.functionName     = mfilename;
 params.gitInfo          = gitInfo;
 params.userName         = userName;
@@ -153,6 +164,8 @@ try
     params.startDateTime    = datestr(now);
     params.endDateTime      = datestr(now); % this is updated below
     params.TRtime(TRct) = GetSecs;
+    params.GreenTime = [];
+    params.RedTime = [];
     disp(['T ' num2str(TRct) ' received - 0 seconds']);
     lastT = startTime;
     lastR = startTime;

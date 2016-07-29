@@ -46,7 +46,7 @@ if ~exist(outDir,'dir')
     mkdir(outDir);
 end
 %% Get the stimulus type
-runType = input('Which run type? movie/pRF/flash/dMRI/T1/T2:\n','s');
+runType = input('Which run type? movie/pRF/flash/FULL:\n','s');
 if isempty(runType)
     error('no run type!');
 end
@@ -76,29 +76,12 @@ switch runType
         end
         play_movie(paramFile,movieName,movieTime);
     case 'pRF'
-        play_pRF(paramFile,imagesFull,TR,scanDur,display,tChar,rChar,minTR)
+        play_pRF(paramFile);
     case 'flash'
-        play_flash(paramFile,stimFreq,stimDur,blockDur,tChar,minTR);
-    case 'dMRI'
+        play_flash(paramFile);
+    case 'FULL'
         movieName = fullfile(dbDir,'TOME_materials','WALL-E.mp4');
-        switch runNum
-            case '1'
-                movieTime = [0 337];
-            case '2'
-                movieTime = [337 674];
-            case '3'
-                movieTime = [674 1011];
-            case '4'
-                movieTime = [1011 1348];
-        end
-        play_movie(paramFile,movieName,movieTime);
-    case 'T1'
-        movieName = fullfile(dbDir,'TOME_materials','WALL-E.mp4');
-        movieTime = [1348 1746];
-        play_movie(paramFile,movieName,movieTime);
-    case 'T2'
-        movieName = fullfile(dbDir,'TOME_materials','WALL-E.mp4');
-        movieTime = [1746 2103];
+        movieTime = [0 inf];
         play_movie(paramFile,movieName,movieTime);
     otherwise
         disp('unknown run type');
