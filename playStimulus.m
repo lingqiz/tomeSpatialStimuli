@@ -36,9 +36,9 @@ sprintf(['\nSession Names:\n' ...
     '\n1 - session1_restAndStructure' ...
     '\n2 - session2_spatialStimuli' ...
     '\n3 - session3_OneLight\n'])
-sessNum = input('Which session number? <1>/2/3:\n');
+sessNum = input('Which session number? 1/2/3:\n');
 if isempty(sessNum)
-    sessNum = 1;
+    error('no session number!');
 end
 %% Set output directory
 outDir = fullfile(dbDir,'TOME_data',sessNames{sessNum},subjName,sessDate);
@@ -46,7 +46,7 @@ if ~exist(outDir,'dir')
     mkdir(outDir);
 end
 %% Get the stimulus type
-runType = input('Which run type? movie/pRF/flash/DTI/T1/T2:\n','s');
+runType = input('Which run type? movie/pRF/flash/dMRI/T1/T2:\n','s');
 if isempty(runType)
     error('no stimulus type!');
 end
@@ -79,26 +79,26 @@ switch runType
         play_pRF(paramFile,imagesFull,TR,scanDur,display,tChar,rChar,minTR)
     case 'flash'
         play_flash(paramFile,stimFreq,stimDur,blockDur,tChar,minTR);
-    case DTI
+    case 'dMRI'
         movieName = fullfile(dbDir,'TOME_materials','WALL-E.mov');
         switch runNum
             case '1'
-                movieTime = [0 300];
+                movieTime = [0 337];
             case '2'
-                movieTime = [300 600];
+                movieTime = [337 674];
             case '3'
-                movieTime = [600 900];
+                movieTime = [674 1011];
             case '4'
-                movieTime = [900 1200];
+                movieTime = [1011 1348];
         end
         play_movie(paramFile,movieName,movieTime);
-    case T1
+    case 'T1'
         movieName = fullfile(dbDir,'TOME_materials','WALL-E.mov');
-        movieTime = [0 300];
+        movieTime = [1348 1746];
         play_movie(paramFile,movieName,movieTime);
-    case T2
+    case 'T2'
         movieName = fullfile(dbDir,'TOME_materials','WALL-E.mov');
-        movieTime = [0 300];
+        movieTime = [1746 2103];
         play_movie(paramFile,movieName,movieTime);
     otherwise
         disp('unknown run type');
