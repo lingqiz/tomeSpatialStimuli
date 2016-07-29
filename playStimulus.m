@@ -27,10 +27,8 @@ if isempty(subjName)
     error('no subject name!');
 end
 %% Get the session date
-sessDate = input('Session date? e.g. 122516:\n','s');
-if isempty(sessDate)
-    error('no session date!');
-end
+tmp = datestr(now,2);
+sessDate = tmp([1,2,4,5,7,8]);
 %% Get the session name
 sprintf(['\nSession Names:\n' ...
     '\n1 - session1_restAndStructure' ...
