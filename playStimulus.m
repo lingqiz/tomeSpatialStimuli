@@ -56,7 +56,7 @@ if isempty(runNum)
     error('no run number!');
 end
 %% Get the function input
-stimDir = fullfile(outDir,'StimulusFiles');
+stimDir = fullfile(outDir,'MatFiles');
 if ~exist(stimDir,'dir')
     mkdir(stimDir);
 end
@@ -80,7 +80,7 @@ switch runType
     case 'flash'
         play_flash(paramFile,stimFreq,stimDur,blockDur,tChar,minTR);
     case 'dMRI'
-        movieName = fullfile(dbDir,'TOME_materials','WALL-E.mov');
+        movieName = fullfile(dbDir,'TOME_materials','WALL-E.mp4');
         switch runNum
             case '1'
                 movieTime = [0 337];
@@ -93,11 +93,11 @@ switch runType
         end
         play_movie(paramFile,movieName,movieTime);
     case 'T1'
-        movieName = fullfile(dbDir,'TOME_materials','WALL-E.mov');
+        movieName = fullfile(dbDir,'TOME_materials','WALL-E.mp4');
         movieTime = [1348 1746];
         play_movie(paramFile,movieName,movieTime);
     case 'T2'
-        movieName = fullfile(dbDir,'TOME_materials','WALL-E.mov');
+        movieName = fullfile(dbDir,'TOME_materials','WALL-E.mp4');
         movieTime = [1746 2103];
         play_movie(paramFile,movieName,movieTime);
     otherwise
