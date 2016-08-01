@@ -39,7 +39,11 @@ if isempty(sessNum)
     error('no session number!');
 end
 %% Set output directory
-outDir = fullfile(dbDir,'TOME_data',sessNames{sessNum},subjName,sessDate);
+if strcmp(userName,'connectome')
+    outDir = fullfile(dbDir,'TOME_data',sessNames{sessNum},subjName,sessDate);
+else
+    outDir = fullfile('/Users',userName,'TOME_data',sessNames{sessNum},subjName,sessDate);
+end
 if ~exist(outDir,'dir')
     mkdir(outDir);
 end
