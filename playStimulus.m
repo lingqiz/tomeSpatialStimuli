@@ -48,7 +48,12 @@ if ~exist(outDir,'dir')
     mkdir(outDir);
 end
 %% Get the stimulus type
-runType = input('Which run type? movie/pRF/flash/FULL:\n','s');
+sprintf(['\nRun Types:\n' ...
+    '\n1 - movie' ...
+    '\n2 - pRF' ...
+    '\n3 - flash' ...
+    '\n4 - FULL\n'])
+runType = input('Which run type? 1/2/3/4:\n','s');
 if isempty(runType)
     error('no run type!');
 end
@@ -64,7 +69,7 @@ if ~exist(stimDir,'dir')
 end
 paramFile = fullfile(stimDir,[runType '_run' runNum '.mat']);
 switch runType
-    case 'movie'
+    case '1'
         movieName = fullfile(dbDir,'TOME_materials','PixarShorts.mov');
         switch runNum
             case '1'
@@ -77,11 +82,11 @@ switch runType
                 movieTime = [1228 1564];
         end
         play_movie(paramFile,movieName,movieTime);
-    case 'pRF'
+    case '2'
         play_pRF(paramFile);
-    case 'flash'
+    case '3'
         play_flash(paramFile);
-    case 'FULL'
+    case '4'
         movieName = fullfile(dbDir,'TOME_materials','WALL-E.mp4');
         movieTime = [0 inf];
         play_movie(paramFile,movieName,movieTime);

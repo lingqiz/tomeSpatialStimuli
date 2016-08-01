@@ -18,8 +18,9 @@ function pressed = escPressed(keybs)
 % end
 
 
-[ keyIsDown, timeSecs, keyCode ] = KbCheck(keybs);
+[keyIsDown,~,keyCode] = KbCheck(keybs);
 if keyIsDown
+    WaitSecs(0.001);
     keyPressed = KbName(keyCode);
     if iscell(keyPressed)
         for i = 1:length(keyPressed)
