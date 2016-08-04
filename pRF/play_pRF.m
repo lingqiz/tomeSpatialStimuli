@@ -120,7 +120,7 @@ display.resolution = [res.width res.height];
 PsychImaging('PrepareConfiguration');
 PsychImaging('AddTask', 'General', 'UseRetinaResolution');
 [winPtr, windowRect] = PsychImaging('OpenWindow', screenid, grey);
-[mint,~,~] = Screen('GetFlipInterval',winPtr,200);
+[mint,~,~] = Screen('GetFlipInterval',winPtr,100);
 display.frameRate = 1/mint; % 1/monitor flip interval = framerate (Hz)
 display.screenAngle = pix2angle( display, display.resolution );
 [screenXpix, screenYpix] = Screen('WindowSize', winPtr);% Get the size of the on screen window
