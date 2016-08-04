@@ -147,6 +147,7 @@ try
     Screen('DrawDots', winPtr, [0;0], fix_dot,black, center, 1);
     Screen('Flip',winPtr);
     soundsc(sin(1:.5:1000)); % play 'ready' tone
+    disp('Ready, waiting for trigger...');
     startTime = wait4T(tChar);  %wait for 't' from scanner.
     ListenChar(2);
     HideCursor;

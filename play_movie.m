@@ -107,33 +107,37 @@ try
     Screen('PlayMovie',movieObj,1,0,soundVol);
     % Wait for trigger
     soundsc(sin(1:.5:1000)); % play 'ready' tone
-    wait4T(keybs);  %wait for 't' from scanner.
+    disp('Ready, waiting for trigger...');
+    startTime = wait4T(tChar);  %wait for 't' from scanner.
     % Save params
-    TRct = 1; % first TRTime already recorded (first TR starts the movie)
-    disp(['T ' num2str(TRct) ' received - 0 seconds']);
+    %TRct = 1; % first TRTime already recorded (first TR starts the movie)
+    %disp(['T ' num2str(TRct) ' received - 0 seconds']);
     breakIt = 0;
     params.startDateTime    = datestr(now);
     params.endDateTime      = datestr(now); % this is updated below
     params.ScreenflipTime(1)  = GetSecs();
-    params.TRTime(1)    = GetSecs(); % first flipTime is PlayMovie
+    %params.TRTime(1)    = GetSecs(); % first flipTime is PlayMovie
     lastFrame=-1;           % Presentation timestamp of last frame.
     frameCt=0;              % Number of loaded movie frames.
     flipct = 1; % first flipTime is PlayMovie
-    startTime = GetSecs;  %read the clock
-    elapsedTime = 0;
-    while elapsedTime < (movieTime(2) - movieTime(1)) && ~breakIt  %loop until 'esc' pressed or time runs out
-        % get 't' from scanner
-        [keyIsDown, secs, keyCode, ~] = KbCheck(-3);
-        if keyIsDown % If *any* key is down
-            % If t is one of the keys being pressed
-            if sum(ismember(KbName(tChar),find(keyCode)))
-                if (secs-params.TRTime(end)) > minTR
-                    TRct = TRct+1;
-                    params.TRTime(TRct) = secs;
-                    disp(['T ' num2str(TRct) ' received - ' num2str(elapsedTime) ' seconds']);
-                end
-            end
-        end
+    disp(['Trigger received - ' params.startDateTime]);
+    while GetSecs-startTime < (movieTime(2) - movieTime(1)) && ~breakIt  %loop until 'esc' pressed or time runs out
+        % update timers
+        elapsedTime = GetSecs-startTime;
+        % check to see if the "esc" button was pressed
+        breakIt = escPressed(keybs);
+        %         % get 't' from scanner
+        %         [keyIsDown, secs, keyCode, ~] = KbCheck(-3);
+        %         if keyIsDown % If *any* key is down
+        %             % If t is one of the keys being pressed
+        %             if sum(ismember(KbName(tChar),find(keyCode)))
+        %                 if (secs-params.TRTime(end)) > minTR
+        %                     TRct = TRct+1;
+        %                     params.TRTime(TRct) = secs;
+        %                     disp(['T ' num2str(TRct) ' received - ' num2str(elapsedTime) ' seconds']);
+        %                 end
+        %             end
+        %         end
         [frameTexture,frameTime] = Screen('GetMovieImage', winPtr, movieObj, 1);
         if (frameTexture>0 && frameTime>lastFrame)
             % Store its texture handle and exact movie timestamp in
@@ -151,11 +155,8 @@ try
         flipct = flipct+1;
         params.ScreenflipTime(flipct) = flipTime;
         Screen('Close',frameTexture);
-        % update timers
-        elapsedTime = GetSecs-startTime;
         params.endDateTime = datestr(now);
-        % check to see if the "esc" button was pressed
-        breakIt = escPressed(keybs);
+        WaitSecs(0.001);
     end
     Screen('PlayMovie',movieObj,0); % Stop Movie
     Screen('CloseMovie',movieObj); % Close Move
