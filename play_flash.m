@@ -101,35 +101,34 @@ try
 %         'center',display.resolution(2)/3,[],[],[],[],[],0);
     Screen('Flip',winPtr);
     soundsc(sin(1:.5:1000)); % play 'ready' tone
-    wait4T(keybs);  %wait for 't' from scanner.
+    disp('Ready, waiting for trigger...');
+    startTime = wait4T(tChar);  %wait for 't' from scanner.
     ListenChar(2);
     HideCursor;
     %% Drawing Loop
     breakIt = 0;
     frameCt = 0;
-    TRct = 1;
-    startTime = GetSecs;  %read the clock
+    %TRct = 1;
     curFrame = 0;
     params.startDateTime    = datestr(now);
     params.endDateTime      = datestr(now); % this is updated below
-    params.TRtime(TRct) = GetSecs;
-    disp(['T ' num2str(TRct) ' received - 0 seconds']);
-    lastT = startTime;
+    %params.TRtime(TRct) = GetSecs;
+    %lastT = startTime;
     elapsedTime = 0;
     while elapsedTime < stimDur && ~breakIt  %loop until 'esc' pressed or time runs out
-        % get 't' from scanner
-        [keyIsDown, secs, keyCode, ~] = KbCheck(-3);
-        if keyIsDown % If *any* key is down
-            % If 't' is one of the keys being pressed
-            if sum(ismember(KbName(tChar),find(keyCode)))
-                if (secs-lastT) > minTR
-                    TRct = TRct + 1;
-                    params.TRtime(TRct) = GetSecs;
-                    disp(['T ' num2str(TRct) ' received - ' num2str(elapsedTime) ' seconds']);
-                    lastT = secs;
-                end
-            end
-        end
+%         % get 't' from scanner
+%         [keyIsDown, secs, keyCode, ~] = KbCheck(-3);
+%         if keyIsDown % If *any* key is down
+%             % If 't' is one of the keys being pressed
+%             if sum(ismember(KbName(tChar),find(keyCode)))
+%                 if (secs-lastT) > minTR
+%                     TRct = TRct + 1;
+%                     params.TRtime(TRct) = GetSecs;
+%                     disp(['T ' num2str(TRct) ' received - ' num2str(elapsedTime) ' seconds']);
+%                     lastT = secs;
+%                 end
+%             end
+%         end
         % Flip between background and flicker
         thisblock = floor(elapsedTime/blockDur);
         if mod(thisblock,2)
@@ -152,6 +151,7 @@ try
         params.endDateTime = datestr(now);
         % check to see if the "esc" button was pressed
         breakIt = escPressed(keybs);
+        WaitSecs(0.001);
     end
     sca;
     disp(['elapsedTime = ' num2str(elapsedTime)]);
