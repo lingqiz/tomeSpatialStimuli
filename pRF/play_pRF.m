@@ -146,11 +146,11 @@ try
         'center',display.resolution(2)/3,[],[],[],[],[],0);
     Screen('DrawDots', winPtr, [0;0], fix_dot,black, center, 1);
     Screen('Flip',winPtr);
+    ListenChar(2);
+    HideCursor;
     soundsc(sin(1:.5:1000)); % play 'ready' tone
     disp('Ready, waiting for trigger...');
     startTime = wait4T(tChar);  %wait for 't' from scanner.
-    ListenChar(2);
-    HideCursor;
     %% Drawing Loop
     breakIt = 0;
     Keyct = 0;

@@ -96,15 +96,15 @@ Texture(3) = Screen('MakeTexture', winPtr, greyScreen);
 try
     commandwindow;
     Screen('FillRect',winPtr, grey);
-%     Screen('TextSize',winPtr,40);
-%     DrawFormattedText(winPtr, 'SCAN STARTING SOON, HOLD STILL!!!', ...
-%         'center',display.resolution(2)/3,[],[],[],[],[],0);
+    %     Screen('TextSize',winPtr,40);
+    %     DrawFormattedText(winPtr, 'SCAN STARTING SOON, HOLD STILL!!!', ...
+    %         'center',display.resolution(2)/3,[],[],[],[],[],0);
     Screen('Flip',winPtr);
+    ListenChar(2);
+    HideCursor;
     soundsc(sin(1:.5:1000)); % play 'ready' tone
     disp('Ready, waiting for trigger...');
     startTime = wait4T(tChar);  %wait for 't' from scanner.
-    ListenChar(2);
-    HideCursor;
     %% Drawing Loop
     breakIt = 0;
     frameCt = 0;
@@ -116,19 +116,19 @@ try
     %lastT = startTime;
     elapsedTime = 0;
     while elapsedTime < stimDur && ~breakIt  %loop until 'esc' pressed or time runs out
-%         % get 't' from scanner
-%         [keyIsDown, secs, keyCode, ~] = KbCheck(-3);
-%         if keyIsDown % If *any* key is down
-%             % If 't' is one of the keys being pressed
-%             if sum(ismember(KbName(tChar),find(keyCode)))
-%                 if (secs-lastT) > minTR
-%                     TRct = TRct + 1;
-%                     params.TRtime(TRct) = GetSecs;
-%                     disp(['T ' num2str(TRct) ' received - ' num2str(elapsedTime) ' seconds']);
-%                     lastT = secs;
-%                 end
-%             end
-%         end
+        %         % get 't' from scanner
+        %         [keyIsDown, secs, keyCode, ~] = KbCheck(-3);
+        %         if keyIsDown % If *any* key is down
+        %             % If 't' is one of the keys being pressed
+        %             if sum(ismember(KbName(tChar),find(keyCode)))
+        %                 if (secs-lastT) > minTR
+        %                     TRct = TRct + 1;
+        %                     params.TRtime(TRct) = GetSecs;
+        %                     disp(['T ' num2str(TRct) ' received - ' num2str(elapsedTime) ' seconds']);
+        %                     lastT = secs;
+        %                 end
+        %             end
+        %         end
         % Flip between background and flicker
         thisblock = floor(elapsedTime/blockDur);
         if mod(thisblock,2)
