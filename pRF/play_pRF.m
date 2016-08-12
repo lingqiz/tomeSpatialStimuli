@@ -52,6 +52,7 @@ end
 if ~exist('display','var') || isempty(display)
     display.distance = 106.5; % distance from screen (cm) - (UPenn - SC3T);
     display.width = 69.7347; % width of screen (cm) - (UPenn - SC3T);
+    display.height = 39.2257; % height of screen (cm) - (UPenn - SC3T);
 end
 % scanner trigger
 if ~exist('tChar','var') || isempty(tChar)
