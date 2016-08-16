@@ -1,19 +1,20 @@
-function play_movie(paramFile,movieName,movieTime,indexisFrames,soundVol,tChar,minTR)
+function play_movie(saveInfo,movieName,movieTime,indexisFrames,soundVol,tChar,TR,display)
 
 %% Usage:
 %
-%   play_movie(paramFile,movieName,movieTime,indexisFrames,soundVol,tChar,minTR)
+%   play_movie(paramFile,movieName,movieTime,indexisFrames,soundVol,tChar,TR,display)
 %
-%   defaults:
-%   movieName       = '/Users/abock/PixarShorts.mov'; % pixar shorts
-%   subjName        = 'test' % subject name
-%   runNum          = 999 % runNum (e.g. 1)
-%   movieTime       = [0 30]; % [start end] time of movie
-%   endTime         = 30; % start time of movie
-%   indexisFrames   = 0; % '1' changes the index from seconds to movie frames
-%   soundVol        = 0; % can be a value between 0 (off) and 1 (full volume)
-%   tChar           = {'t'}; % character(s) to signal a scanner trigger
-%   minTR           = 0.25; % minimum time allowed between TRs (for use with recording triggers)
+%   Required inputs:
+%   paramFile           - full path to output file containing timing of events, etc
+%
+%   Defaults:
+%   movieName           - '/Users/abock/PixarShorts.mov'; % pixar shorts
+%   movieTime           - [0 30]; % [start end] time of movie
+%   endTime             - 30; % start time of movie
+%   indexisFrames       - 0; % '1' changes the index from seconds to movie frames
+%   soundVol            - 0; % can be a value between 0 (off) and 1 (full volume)
+%   tChar               - {'t'}; % character(s) to signal a scanner trigger
+%   TR                  - 0.8; % TR (seconds)
 %
 %   Written by Andrew S Bock Mar 2014
 
@@ -49,14 +50,23 @@ end
 if ~exist('tChar','var') || isempty(tChar)
     tChar = {'t'};
 end
-% minimum time between TRs
-if ~exist('minTR','var') || isempty(minTR)
-    minTR = 0.25;
+% TR
+if ~exist('TR','var') || isempty(TR)
+    TR = 0.8;
+end
+% dispaly parameters
+if ~exist('display','var') || isempty(display)
+    display.distance = 106.5; % distance from screen (cm) - (UPenn - SC3T);
+    display.width = 69.7347; % width of screen (cm) - (UPenn - SC3T);
+    display.height = 39.2257; % height of screen (cm) - (UPenn - SC3T);
 end
 %% Save input variables
 params.functionName     = mfilename;
 params.gitInfo          = gitInfo;
 params.userName         = userName;
+params.subjectName      = saveInfo.subjectName;
+params.TR               = TR;
+params.scanDur          = movieTime(2) - movieTime(1);
 params.movieName        = movieName;
 params.movieTime        = movieTime;
 params.indexisFrames    = indexisFrames;
@@ -89,6 +99,7 @@ PsychImaging('AddTask', 'General', 'UseRetinaResolution');
 [winPtr] = PsychImaging('OpenWindow', screenid, grey);
 [mint,~,~] = Screen('GetFlipInterval',winPtr,200);
 display.frameRate = 1/mint; % 1/monitor flip interval = framerate (Hz)
+display.screenAngle = pix2angle( display, display.resolution );
 %% Play the movie
 try
     commandwindow;
@@ -166,7 +177,8 @@ try
     ShowCursor;
     Screen('CloseAll');
     %% Save params
-    save(paramFile,'params');
+    params.display = display;
+    save(saveInfo.fileName,'params');
 catch ME
     Screen('CloseAll');
     ListenChar(1);

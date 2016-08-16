@@ -21,11 +21,6 @@ sessNames = {...
     'session1_restAndStructure' ...
     'session2_spatialStimuli' ...
     'session3_OneLight'};
-runNames = {...
-    'MOVIE' ...
-    'RETINO' ...
-    'FLASH' ...
-    'FULL'};
 %% Get the subject name
 subjName = input('Subject name? e.g. TOME_3###:\n','s');
 if isempty(subjName)
@@ -45,9 +40,9 @@ if isempty(sessNum)
 end
 %% Set output directory
 if strcmp(userName,'connectome')
-    outDir = fullfile(dbDir,'TOME_data',sessNames{sessNum},subjName,sessDate);
+    outDir = fullfile(dbDir,'TOME_data',sessNames{sessNum},subjName,sessDate,'MatFiles');
 else
-    outDir = fullfile('/Users',userName,'TOME_data',sessNames{sessNum},subjName,sessDate);
+    outDir = fullfile('/Users',userName,'TOME_data',sessNames{sessNum},subjName,sessDate,'MatFiles');
 end
 if ~exist(outDir,'dir')
     mkdir(outDir);
@@ -68,34 +63,60 @@ if isempty(runNum)
     error('no run number!');
 end
 %% Get the function input
-stimDir = fullfile(outDir,'MatFiles');
-if ~exist(stimDir,'dir')
-    mkdir(stimDir);
-end
-paramFile = fullfile(stimDir,[runNames{str2double(runType)} ...
-    '_run' runNum '.mat']);
+saveInfo.subjectName        = subjName;
 switch runType
     case '1'
-        movieName = fullfile(dbDir,'TOME_materials','PixarShorts.mov');
+        movieName = fullfile(dbDir,'TOME_materials','StimulusFiles','PixarShorts.mov');
         switch runNum
             case '1'
-                movieTime = [1880 2216];
+                movieTime   = [1880 2216];
+                runName     = 'tfMRI_MOVIE_AP_run01';
             case '2'
-                movieTime = [2216 2552];
+                movieTime   = [2216 2552];
+                runName     = 'tfMRI_MOVIE_AP_run02';
             case '3'
-                movieTime = [892 1228];
+                movieTime   = [892 1228];
+                runName     = 'tfMRI_MOVIE_PA_run03';
             case '4'
-                movieTime = [1228 1564];
+                movieTime   = [1228 1564];
+                runName     = 'tfMRI_MOVIE_PA_run04';
         end
-        play_movie(paramFile,movieName,movieTime);
+        saveInfo.fileName   = fullfile(outDir,[runName '.mat']);
+        play_movie(saveInfo,movieName,movieTime);
     case '2'
-        play_pRF(paramFile);
+        switch runNum
+            case '1'
+                runName     = 'tfMRI_RETINO_PA_run01';
+            case '2'
+                runName     = 'tfMRI_RETINO_PA_run02';
+            case '3'
+                runName     = 'tfMRI_RETINO_AP_run03';
+            case '4'
+                runName     = 'tfMRI_RETINO_AP_run04';
+        end
+        saveInfo.fileName   = fullfile(outDir,[runName '.mat']);
+        play_pRF(saveInfo);
     case '3'
-        play_flash(paramFile);
+        switch runNum
+            case '1'
+                runName     = 'tfMRI_FLASH_AP_run01';
+            case '2'
+                runName     = 'tfMRI_FLASH_PA_run02';
+        end
+        saveInfo.fileName   = fullfile(outDir,[runName '.mat']);
+        play_flash(saveInfo);
     case '4'
-        movieName = fullfile(dbDir,'TOME_materials','WALL-E.mp4');
-        movieTime = [0 inf];
-        play_movie(paramFile,movieName,movieTime);
+        movieName = fullfile(dbDir,'TOME_materials','StimulusFiles','WALL-E.mp4');
+        switch runNum
+            case '1'
+                runName     = 'dMRI_T1w_T2w_run01';
+            case '2'
+                runName     = 'dMRI_T1w_T2w_run02';
+        end
+        movieStart = input('Movie start time (sec)? e.g. 0:\n');
+        movieTime = [movieStart inf];
+        saveInfo.fileName   = fullfile(outDir,[runName '.mat']);
+        play_movie(saveInfo,movieName,movieTime);
     otherwise
         disp('unknown run type');
 end

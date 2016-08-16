@@ -1,19 +1,22 @@
-function play_pRF(paramFile,imagesFull,TR,scanDur,display,tChar,rChar)
+function play_pRF(saveInfo,imagesFull,TR,scanDur,display,tChar,rChar)
 
 %% Play pRF movie stimuli
-%   'imagesFull' input created using 'make_bars.m'
 %
 %   Usage:
-%   play_pRF(outFile,imagesFull,TR,scanDur,display,redFrames,minTR)
+%   play_pRF(paramFile,imagesFull,TR,scanDur,display,tChar,rChar)
+%
+%   Required inputs:
+%   paramFile           - full path to output file containing timing of events, etc
 %
 %   Defaults:
-%   TR                  = 0.8; % TR (seconds)
-%   scanDur             = 336: % scan duration (seconds)
-%   display.distance    = 106.5; % distance from screen (cm) - (UPenn - SC3T);
-%   display.width       = 69.7347; % width of screen (cm) - (UPenn - SC3T);
-%   tChar               = {'t'}; % character(s) to signal a scanner trigger
-%   rChar               = {'r' 'g' 'b' 'y'}; % character(s) to signal a button response
-%   minTR               = 0.25; % minimum time allowed between TRs (for use with recording triggers)
+%   imagesFull          - loads pRF images from fullfile(dbDir,'TOME_materials','pRFimages.mat');
+%   TR                  - 0.8; % TR (seconds)
+%   scanDur             - 336: % scan duration (seconds)
+%   display.distance    - 106.5; % distance from screen (cm) - (UPenn - SC3T);
+%   display.width       - 69.7347; % width of screen (cm) - (UPenn - SC3T);
+%   display.height      - 39.2257; % height of screen (cm) - (UPenn - SC3T);
+%   tChar               - {'t'}; % character(s) to signal a scanner trigger
+%   rChar               - {'r' 'g' 'b' 'y'}; % character(s) to signal a button response
 %
 %   Written by Andrew S Bock Aug 2014
 
@@ -34,7 +37,7 @@ dbDir = ['/Users/' userName '/Dropbox (Aguirre-Brainard Lab)'];
 disp(['Dropbox directory = ' dbDir]);
 % Load images
 if ~exist('imagesFull','var') || isempty(imagesFull)
-    imFile = fullfile(dbDir,'TOME_materials','pRFimages.mat');
+    imFile = fullfile(dbDir,'TOME_materials','StimulusFiles','pRFimages.mat');
     disp('Loading pRF images file...');
     tmp = load(imFile);
     imagesFull = tmp.imagesFull;
@@ -66,6 +69,7 @@ end
 params.functionName     = mfilename;
 params.gitInfo          = gitInfo;
 params.userName         = userName;
+params.subjectName      = saveInfo.subjectName;
 params.TR               = TR;
 params.scanDur          = scanDur;
 %% For Trigger
@@ -105,7 +109,6 @@ if ~exist('redFrames','var') || isempty(redFrames)
         end
     end
 end
-params.redFrames = redFrames;
 %% Initial settings
 PsychDefaultSetup(2);
 Screen('Preference', 'SkipSyncTests', 2); % Skip sync tests
@@ -160,8 +163,8 @@ try
     curFrame = 1;
     params.startDateTime    = datestr(now);
     params.endDateTime      = datestr(now); % this is updated below
-    params.GreenTime        = [];
-    params.RedTime          = [];
+    params.GreenDotTime        = [];
+    params.RedDotTime          = [];
     disp(['Trigger received - ' params.startDateTime]);
     while GetSecs-startTime < scanDur && ~breakIt  %loop until 'esc' pressed or time runs out
         % update timers
@@ -189,11 +192,11 @@ try
             screenYpix/2-fix_mask/2,screenXpix/2+fix_mask/2,screenYpix/2+fix_mask/2]);
         if redFrames(curFrame)
             Rct = Rct + 1;
-            params.RedTime(Rct) = GetSecs;
+            params.RedDotTime(Rct) = GetSecs;
             Screen('DrawDots', winPtr, [0;0], fix_dot, [1 0 0], center, 1);
         else
             Gct = Gct + 1;
-            params.GreenTime(Gct) = GetSecs;
+            params.GreenDotTime(Gct) = GetSecs;
             Screen('DrawDots', winPtr, [0;0], fix_dot, [0 1 0], center, 1);
         end
         % Flip to the screen
@@ -208,7 +211,7 @@ try
     Screen('CloseAll');
     %% Save params
     params.display = display;
-    save(paramFile,'params');
+    save(saveInfo.fileName,'params');
 catch ME
     Screen('CloseAll');
     ListenChar(1);

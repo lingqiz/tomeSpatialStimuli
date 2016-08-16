@@ -1,17 +1,22 @@
-function play_flash(paramFile,stimFreq,stimDur,blockDur,tChar,minTR)
+function play_flash(saveInfo,stimFreq,scanDur,blockDur,tChar,TR,display)
 
 %% Displays a black/white full-field flicker
 %
 %   Usage:
-%   play_flash(paramFile,stimFreq,stimDur,blockDur)
+%   play_flash(paramFile,stimFreq,scanDur,blockDur,tChar,TR,display)
 %
-%   Inputs:
-%   paramFile   - full path to output file containing timing of events, etc
-%   stimFreq    - stimulus flicker frequency    (default = 16   [hertz])
-%   stimDur     - duration of entire stimulus   (default = 336  [seconds])
-%   blockDur    - duration of stimulus blocks   (default = 12   [seconds])
-%   tChar           = {'t'}; % character(s) to signal a scanner trigger
-%   minTR       - minimum time allowed between TRs (for use with recording triggers) (default = 0.25 [seconds])
+%   Required inputs:
+%   paramFile           - full path to output file containing timing of events, etc
+%
+%   Defaults:
+%   stimFreq            - stimulus flicker frequency    (default = 16   [hertz])
+%   scanDur             - duration of entire stimulus   (default = 336  [seconds])
+%   blockDur            - duration of stimulus blocks   (default = 12   [seconds])
+%   tChar               - {'t'}; % character(s) to signal a scanner trigger
+%   TR                  - 0.8; % TR (seconds)
+%   display.distance    - 106.5; % distance from screen (cm) - (UPenn - SC3T);
+%   display.width       - 69.7347; % width of screen (cm) - (UPenn - SC3T);
+%   display.height      - 39.2257; % height of screen (cm) - (UPenn - SC3T);
 %
 %   Stimulus will flicker at 'stimFreq', occilating between flicker and
 %   grey screen based on 'blockDur'
@@ -36,7 +41,7 @@ if ~exist('stimFreq','var')
 end
 % stimulus duration
 if ~exist('stimDur','var')
-    stimDur = 336; % seconds
+    scanDur = 336; % seconds
 end
 % block duration
 if ~exist('blockDur','var')
@@ -46,16 +51,24 @@ end
 if ~exist('tChar','var') || isempty(tChar)
     tChar = {'t'};
 end
-% minimum time between TRs
-if ~exist('minTR','var') || isempty(minTR)
-    minTR = 0.25;
+% TR
+if ~exist('TR','var') || isempty(TR)
+    TR = 0.8;
+end
+% dispaly parameters
+if ~exist('display','var') || isempty(display)
+    display.distance = 106.5; % distance from screen (cm) - (UPenn - SC3T);
+    display.width = 69.7347; % width of screen (cm) - (UPenn - SC3T);
+    display.height = 39.2257; % height of screen (cm) - (UPenn - SC3T);
 end
 %% Save input variables
 params.functionName     = mfilename;
 params.gitInfo          = gitInfo;
 params.userName         = userName;
+params.subjectName      = saveInfo.subjectName;
+params.TR               = TR;
+params.stimDur          = scanDur;
 params.stimFreq         = stimFreq;
-params.stimDur          = stimDur;
 params.blockDur         = blockDur;
 %% Initial settings
 PsychDefaultSetup(2);
@@ -85,6 +98,7 @@ PsychImaging('AddTask', 'General', 'UseRetinaResolution');
 [winPtr] = PsychImaging('OpenWindow', screenid, grey);
 [mint,~,~] = Screen('GetFlipInterval',winPtr,200);
 display.frameRate = 1/mint; % 1/monitor flip interval = framerate (Hz)
+display.screenAngle = pix2angle( display, display.resolution );
 %% Make images
 greyScreen = grey*ones(fliplr(display.resolution));
 blackScreen = black*ones(fliplr(display.resolution));
@@ -115,7 +129,7 @@ try
     %params.TRtime(TRct) = GetSecs;
     %lastT = startTime;
     elapsedTime = 0;
-    while elapsedTime < stimDur && ~breakIt  %loop until 'esc' pressed or time runs out
+    while elapsedTime < scanDur && ~breakIt  %loop until 'esc' pressed or time runs out
         %         % get 't' from scanner
         %         [keyIsDown, secs, keyCode, ~] = KbCheck(-3);
         %         if keyIsDown % If *any* key is down
@@ -160,7 +174,7 @@ try
     Screen('CloseAll');
     %% Save params
     params.display = display;
-    save(paramFile,'params');
+    save(saveInfo.fileName,'params');
 catch ME
     Screen('CloseAll');
     ListenChar;
