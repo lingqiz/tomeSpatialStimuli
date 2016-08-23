@@ -88,9 +88,13 @@ if ~exist('redFrames','var') || isempty(redFrames)
     maxFrames = size(imagesFull,3);
     redFrames = zeros(1,maxFrames);
     minDiff = 0;
-    while minDiff < ceil(4*TR*8); % dot color changes are separated by at least 4 TRs
-        switches = sort(randperm(maxFrames,ceil(maxFrames/8/TR/20))); % ~every 20s
+    maxDiff = inf;
+    minTime = 5; % dot color changes are separated by at least 5s
+    maxTime = 30; % dot color changes are separated no more than 30s
+    while minDiff < (minTime * 8) || maxDiff > (maxTime * 8) % (8 frames / sec)
+        switches = sort(randperm(maxFrames,ceil(maxFrames / (20 * 8) ))); % ~every 20s
         minDiff = min(diff(switches));
+        maxDiff = max(diff(switches));
     end
     ct = 0;
     % Make a vector of 0's (green) and 1's (red), to use for chaging the
