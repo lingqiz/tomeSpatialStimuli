@@ -129,6 +129,7 @@ try
     %params.TRtime(TRct) = GetSecs;
     %lastT = startTime;
     elapsedTime = 0;
+    disp(['Trigger received - ' params.startDateTime]);
     while elapsedTime < scanDur && ~breakIt  %loop until 'esc' pressed or time runs out
         %         % get 't' from scanner
         %         [keyIsDown, secs, keyCode, ~] = KbCheck(-3);
