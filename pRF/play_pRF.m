@@ -1,22 +1,23 @@
-function play_pRF(saveInfo,imagesFull,TR,scanDur,display,tChar,rChar)
+function play_pRF(saveInfo,stimParams,TR,scanDur,display,tChar,rChar)
 
 %% Play pRF movie stimuli
 %
 %   Usage:
-%   play_pRF(paramFile,imagesFull,TR,scanDur,display,tChar,rChar)
+%   play_pRF(paramFile,stimParams,TR,scanDur,display,tChar,rChar)
 %
 %   Required inputs:
-%   paramFile           - full path to output file containing timing of events, etc
+%   saveInfo.subjectName    - subject name
+%   saveInfo.fileName       - full path and name of output file
 %
 %   Defaults:
-%   imagesFull          - loads pRF images from fullfile(dbDir,'TOME_materials','pRFimages.mat');
-%   TR                  - 0.8; % TR (seconds)
-%   scanDur             - 336: % scan duration (seconds)
-%   display.distance    - 106.5; % distance from screen (cm) - (UPenn - SC3T);
-%   display.width       - 69.7347; % width of screen (cm) - (UPenn - SC3T);
-%   display.height      - 39.2257; % height of screen (cm) - (UPenn - SC3T);
-%   tChar               - {'t'}; % character(s) to signal a scanner trigger
-%   rChar               - {'r' 'g' 'b' 'y'}; % character(s) to signal a button response
+%   stimParams              - loads structure of stimulus parameters created using 'make_bars';
+%   TR                      - 0.8; % TR (seconds)
+%   scanDur                 - 336: % scan duration (seconds)
+%   display.distance        - 106.5; % distance from screen (cm) - (UPenn - SC3T);
+%   display.width           - 69.7347; % width of screen (cm) - (UPenn - SC3T);
+%   display.height          - 39.2257; % height of screen (cm) - (UPenn - SC3T);
+%   tChar                   - {'t'}; % character(s) to signal a scanner trigger
+%   rChar                   - {'r' 'g' 'b' 'y'}; % character(s) to signal a button response
 %
 %   Written by Andrew S Bock Aug 2014
 
@@ -36,11 +37,11 @@ userName                        = strtrim(tmpName);
 dbDir = ['/Users/' userName '/Dropbox (Aguirre-Brainard Lab)'];
 disp(['Dropbox directory = ' dbDir]);
 % Load images
-if ~exist('imagesFull','var') || isempty(imagesFull)
+if ~exist('stimParams','var') || isempty(stimParams)
     imFile                      = fullfile(dbDir,'TOME_materials','StimulusFiles','pRFimages.mat');
     disp('Loading pRF images file...');
-    tmp                         = load(imFile);
-    imagesFull                  = tmp.imagesFull;
+    stimParams                  = load(imFile);
+    imagesFull                  = stimParams.imagesFull;
     clear tmp;
 end
 % TR
@@ -215,8 +216,8 @@ try
     Screen('CloseAll');
     %% Save params
     params.display              = display;
-    params.imagesFull           = imagesFull;    
-    save(saveInfo.fileName,'params');
+    params.stimParams           = stimParams;
+    save(saveInfo.fileName,'params','-v7.3');
 catch ME
     Screen('CloseAll');
     ListenChar(1);
