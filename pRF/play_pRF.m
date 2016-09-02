@@ -3,7 +3,7 @@ function play_pRF(saveInfo,stimParams,TR,scanDur,display,tChar,rChar)
 %% Play pRF movie stimuli
 %
 %   Usage:
-%   play_pRF(paramFile,stimParams,TR,scanDur,display,tChar,rChar)
+%   play_pRF(saveInfo,stimParams,TR,scanDur,display,tChar,rChar)
 %
 %   Required inputs:
 %   saveInfo.subjectName    - subject name
