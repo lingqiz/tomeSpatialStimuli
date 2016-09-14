@@ -66,7 +66,7 @@ end
 saveInfo.subjectName        = subjName;
 switch runType
     case '1'
-        movieName = fullfile(dbDir,'TOME_materials','StimulusFiles','PixarShorts.mov');
+        movieName = fullfile(dbDir,'TOME_materials','stimulusFiles','PixarShorts.mov');
         switch runNum
             case '1'
                 movieTime   = [1880 2216];
@@ -106,7 +106,7 @@ switch runType
         saveInfo.fileName   = fullfile(outDir,[runName '.mat']);
         play_flash(saveInfo);
     case '4'
-        movieName = fullfile(dbDir,'TOME_materials','StimulusFiles','WALL-E.mp4');
+        movieName = fullfile(dbDir,'TOME_materials','stimulusFiles','WALL-E.mp4');
         switch runNum
             case '1'
                 runName     = 'dMRI_T1w_T2w_run01';
