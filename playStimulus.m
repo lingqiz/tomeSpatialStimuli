@@ -40,9 +40,9 @@ if isempty(sessNum)
 end
 %% Set output directory
 if strcmp(userName,'connectome')
-    outDir = fullfile(dbDir,'TOME_data',sessNames{sessNum},subjName,sessDate,'MatFiles');
+    outDir = fullfile(dbDir,'TOME_data',sessNames{sessNum},subjName,sessDate,'Stimuli');
 else
-    outDir = fullfile('/Users',userName,'TOME_data',sessNames{sessNum},subjName,sessDate,'MatFiles');
+    outDir = fullfile('/Users',userName,'TOME_data',sessNames{sessNum},subjName,sessDate,'Stimuli');
 end
 if ~exist(outDir,'dir')
     mkdir(outDir);
