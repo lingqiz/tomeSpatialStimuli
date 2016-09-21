@@ -22,6 +22,7 @@ function play_pRF(saveInfo,stimParams,TR,scanDur,display,tChar,rChar)
 %   Written by Andrew S Bock Aug 2014
 
 %% Set defaults
+cam = webcam('USB Camera');
 % Get git repository information
 fCheck                          = which('GetGitInfo');
 if ~isempty(fCheck)
@@ -73,6 +74,8 @@ params.userName                 = userName;
 params.subjectName              = saveInfo.subjectName;
 params.TR                       = TR;
 params.scanDur                  = scanDur;
+eyeTracking.timeStamp           = nan(1,scanDur*(8/TR)); % 8 frames / TR
+eyeTracking.image               = cell(1,scanDur*(8/TR)); % 8 frames / TR
 %% For Trigger
 a                               = cd;
 if a(1)=='/' % mac or linux
@@ -141,8 +144,8 @@ fix_dot                         = angle2pix(display,0.25); % For fixation cross 
 Screen('BlendFunction', winPtr, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 %% stimulus specific params
 for i = 1:size(imagesFull,3);
-    tmp = imagesFull(:,:,i);
-    Texture(i) = Screen('MakeTexture', winPtr, tmp);
+    tmpI = imagesFull(:,:,i);
+    Texture(i) = Screen('MakeTexture', winPtr, tmpI);
 end
 %% Set to command window
 commandwindow;
@@ -189,9 +192,12 @@ try
         % Display 8 frames / TR
         if abs((elapsedTime / (TR / 8 )) - curFrame) > 0
             curFrame = ceil( elapsedTime / (TR / 8 ));
+            % get image from camera
+            eyeTracking.timeStamp(curFrame) = GetSecs;
+            [eyeTracking.image{curFrame}] = snapshot(cam);
         end
         % carrier
-        Screen( 'DrawTexture', winPtr, Texture(curFrame)); % current frame
+        Screen('DrawTexture',winPtr,Texture(curFrame)); % current frame
         % Fixation Mask
         Screen('FillOval',winPtr,grey,[screenXpix/2-fix_mask/2, ...
             screenYpix/2-fix_mask/2,screenXpix/2+fix_mask/2,screenYpix/2+fix_mask/2]);
@@ -214,10 +220,21 @@ try
     ListenChar(1);
     ShowCursor;
     Screen('CloseAll');
+    %% Downsample the eye-tracking video
+    disp('Converting eye-tracking RGB to gray');
+    for i = 1:size(eyeTracking.image,2)
+        tmpE                    = rgb2gray(eyeTracking.image{i});
+        eyeTracking.image{i}    = imresize(tmpE,0.5);
+    end
     %% Save params
     params.display              = display;
     params.stimParams           = stimParams;
+    params.eyeTracking          = eyeTracking;
+    disp('Saving output file');
+    tic
     save(saveInfo.fileName,'params','-v7.3');
+    disp('done.');
+    toc
 catch ME
     Screen('CloseAll');
     ListenChar(1);
