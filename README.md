@@ -1,2 +1,2 @@
-# Stimuli
-Common repository for all code for generating stimuli for the gkaguirrelab
+# tomeSpatialStimuli
+Toolbox for generating and presenting visual stimuli 
