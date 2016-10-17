@@ -82,6 +82,13 @@ switch runType
                 runName     = 'tfMRI_MOVIE_PA_run04';
         end
         saveInfo.fileName   = fullfile(outDir,[runName '.mat']);
+        % move file if re-running
+        if exist(saveInfo.fileName,'file')
+            if ~exist(fullfile(outDir,'abortedRuns'),'dir')
+                mkdir(fullfile(outDir,'abortedRuns'));
+            end
+            system(['mv ' saveInfo.fileName ' ' fullfile(outDir,'abortedRuns',[runName '.mat'])]);
+        end
         play_movie(saveInfo,movieName,movieTime);
     case '2'
         switch runNum
@@ -95,6 +102,13 @@ switch runType
                 runName     = 'tfMRI_RETINO_AP_run04';
         end
         saveInfo.fileName   = fullfile(outDir,[runName '.mat']);
+        % move file if re-running
+        if exist(saveInfo.fileName,'file')
+            if ~exist(fullfile(outDir,'abortedRuns'),'dir')
+                mkdir(fullfile(outDir,'abortedRuns'));
+            end
+            system(['mv ' saveInfo.fileName ' ' fullfile(outDir,'abortedRuns',[runName '.mat'])]);
+        end
         play_pRF(saveInfo);
     case '3'
         switch runNum
@@ -104,6 +118,13 @@ switch runType
                 runName     = 'tfMRI_FLASH_PA_run02';
         end
         saveInfo.fileName   = fullfile(outDir,[runName '.mat']);
+        % move file if re-running
+        if exist(saveInfo.fileName,'file')
+            if ~exist(fullfile(outDir,'abortedRuns'),'dir')
+                mkdir(fullfile(outDir,'abortedRuns'));
+            end
+            system(['mv ' saveInfo.fileName ' ' fullfile(outDir,'abortedRuns',[runName '.mat'])]);
+        end
         play_flash(saveInfo);
     case '4'
         movieName = fullfile(dbDir,'TOME_materials','stimulusFiles','WALL-E.mp4');
@@ -116,6 +137,13 @@ switch runType
         movieStart = input('Movie start time (sec)? e.g. 0:\n');
         movieTime = [movieStart inf];
         saveInfo.fileName   = fullfile(outDir,[runName '.mat']);
+        % move file if re-running
+        if exist(saveInfo.fileName,'file')
+            if ~exist(fullfile(outDir,'abortedRuns'),'dir')
+                mkdir(fullfile(outDir,'abortedRuns'));
+            end
+            system(['mv ' saveInfo.fileName ' ' fullfile(outDir,'abortedRuns',[runName '.mat'])]);
+        end
         play_movie(saveInfo,movieName,movieTime);
     otherwise
         disp('unknown run type');
