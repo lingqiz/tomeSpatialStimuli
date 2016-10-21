@@ -15,7 +15,7 @@ function playStimulus
 [~, tmpName] = system('whoami');
 userName = strtrim(tmpName);
 % Set Dropbox directory
-dbDir = ['/Users/' userName '/Dropbox (Aguirre-Brainard Lab)'];
+dbDir = ['/Users/' userName '/Dropbox-Aguirre-Brainard-Lab'];
 disp(['Dropbox directory = ' dbDir]);
 sessNames = {...
     'session1_restAndStructure' ...
