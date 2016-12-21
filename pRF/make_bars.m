@@ -177,5 +177,7 @@ totalDur = (length(stimulus.seq) / params.motionSteps) * params.TR; % 8 frames /
 stimulus.seqtiming = linspace(0,totalDur - (totalDur/length(stimulus.seq)),length(stimulus.seq));
 %% Save image and params files
 disp('Saving output file...');
-save(imFile,'images','stimulus','params','imagesFull','-v7.3');
+if exist('imFile','var')
+    save(imFile,'images','stimulus','params','imagesFull','-v7.3');
+end
 disp('done.');
