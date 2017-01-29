@@ -96,10 +96,12 @@ res = Screen('Resolution',max(Screen('screens')));
 display.resolution = [res.width res.height];
 PsychImaging('PrepareConfiguration');
 PsychImaging('AddTask', 'General', 'UseRetinaResolution');
-[winPtr] = PsychImaging('OpenWindow', screenid, grey);
+[winPtr, windowRect]            = PsychImaging('OpenWindow', screenid, grey);
 [mint,~,~] = Screen('GetFlipInterval',winPtr,200);
 display.frameRate = 1/mint; % 1/monitor flip interval = framerate (Hz)
 display.screenAngle = pix2angle( display, display.resolution );
+[center(1), center(2)]          = RectCenter(windowRect); % Get the center coordinate of the window
+fix_dot                         = angle2pix(display,0.25); % For fixation cross (0.25 degree)
 %% Play the movie
 try
     commandwindow;
@@ -108,6 +110,7 @@ try
     Screen('TextSize',winPtr,40);
     DrawFormattedText(winPtr, 'SCAN STARTING SOON, HOLD STILL!!!', ...
         'center',display.resolution(2)/3,[],[],[],[],[],0);
+    Screen('DrawDots', winPtr, [0;0], fix_dot,black, center, 1);
     Screen('Flip',winPtr);
     ListenChar(2);
     HideCursor;
