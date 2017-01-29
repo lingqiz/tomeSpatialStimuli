@@ -150,9 +150,9 @@ commandwindow;
 try
     %% Display Text, wait for Trigger
     Screen('FillRect',winPtr, grey);
-    Screen('TextSize',winPtr,40);
-    DrawFormattedText(winPtr, 'SCAN STARTING SOON, HOLD STILL!!!', ...
-        'center',display.resolution(2)/3,[],[],[],[],[],0);
+%     Screen('TextSize',winPtr,40);
+%     DrawFormattedText(winPtr, 'SCAN STARTING SOON, HOLD STILL!!!', ...
+%         'center',display.resolution(2)/3,[],[],[],[],[],0);
     Screen('DrawDots', winPtr, [0;0], fix_dot,black, center, 1);
     Screen('Flip',winPtr);
     ListenChar(2);
