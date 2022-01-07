@@ -1,5 +1,4 @@
 function [imagesFull,images,stimulus,params] = make_bars(imFile,params)
-
 %% Makes drifting bar stimuli for pRF mapping.
 %   Expected to be used in conjuction with 'play_pRF'
 %
@@ -109,7 +108,6 @@ lowX            = repmat(tmpL,1,numSweeps);
 highX           = repmat(tmpR,1,numSweeps);
 %% Create images
 images=zeros(m,n,numImages*params.motionSteps,'uint8');
-progBar = ProgressBar(numImages,'Creating images...');
 for imgNum=1:numImages
     if remake_xy(imgNum) >=0
         % Rotate x and y based on bar orientation
@@ -124,7 +122,7 @@ for imgNum=1:numImages
     checks      = zeros(size(bars));
     allChecks   = zeros(size(checks,1),size(checks,2),numMotSteps);
     % Create checkerboard, move bars in opposite directions
-    for ii=1:numMotSteps,
+    for ii=1:numMotSteps
         posChecks = sign(2*round(( ...
             cos( checkSize*y*(2*pi/barWidths(imgNum) )...
             +(ii-1)/numMotSteps*2*pi)+1)/2)-1);
@@ -143,7 +141,6 @@ for imgNum=1:numImages
     img         = bk*ones(size(allChecks));
     img(window) = allChecks(window);
     images(:,:,(imgNum-1)*numMotSteps+1:imgNum*numMotSteps) = uint8(img);
-    progBar(imgNum);
 end
 %% insert blank image
 blankImage = uint8(ones(size(images,1),size(images,2)).*bk);
