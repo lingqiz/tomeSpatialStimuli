@@ -1,6 +1,5 @@
 %% Play the retinotopic stimulus
-
-%% Add path
+% Add path
 addpath(fullfile('.', 'pRF'));
 
 %% Generate image stimuli (Run only once)
