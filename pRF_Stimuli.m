@@ -19,4 +19,6 @@ saveInfo.fileName = savePath;
 
 % Play the stimulus
 stimFile = load(fullfile('.', 'data', 'imFile.mat'));
-play_pRF(saveInfo, stimFile.imagesFull);
+stimFile = stimFile.imagesFull;
+
+play_pRF(saveInfo, stimFile);
