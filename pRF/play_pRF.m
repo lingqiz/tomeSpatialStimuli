@@ -139,6 +139,10 @@ for i = 1:size(imagesFull,3)
     Texture(i) = Screen('MakeTexture', winPtr, tmp);
 end
 
+% get rid of large variable to save space
+clear tmp;
+clear imagesFull;
+
 %% Set to command window
 commandwindow;
 
