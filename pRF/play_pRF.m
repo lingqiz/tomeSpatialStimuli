@@ -134,8 +134,8 @@ fix_dot                         = angle2pix(display,0.25); % For fixation cross 
 Screen('BlendFunction', winPtr, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 %% stimulus specific params
-Texture = zeros(1, 1:size(imagesFull,3));
-for i = 1:size(imagesFull,3)
+Texture = zeros(1, size(imagesFull, 3));
+for i = 1:size(imagesFull, 3)
     tmp = imagesFull(:,:,i);
     Texture(i) = Screen('MakeTexture', winPtr, tmp);
 end
