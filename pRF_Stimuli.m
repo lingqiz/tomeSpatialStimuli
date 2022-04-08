@@ -3,11 +3,14 @@
 addpath(fullfile('.', 'pRF'));
 
 %% Generate image stimuli (Run only once)
-imFile = './data/imFile.mat'; % Output file that saves the images
-imagesFull = make_bars(imFile); % Create the images that will be displayed
+genStim = false;
+if genStim
+    imFile = './data/imFile.mat'; % Output file that saves the images
+    imagesFull = make_bars(imFile); % Create the images that will be displayed
+end
 
 %% Save info
-sID = 1; subName = 'LQZ';
+sID = 1; subName = 'PlaceHolder';
 fName = strcat(subName, '_', num2str(sID), '.mat');
 savePath = fullfile('.', 'data', fName);
 
