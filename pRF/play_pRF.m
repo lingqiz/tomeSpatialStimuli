@@ -150,14 +150,23 @@ commandwindow;
 %% Run try/catch
 try
     %% Display Text, wait for Trigger
-    Screen('FillRect',winPtr, grey);
-    Screen('DrawDots', winPtr, [0;0], fix_dot,black, center, 1);
-    Screen('Flip',winPtr);
-    ListenChar(2);
-    HideCursor;
+    ListenChar(2);    
     soundsc(sin(1:.5:1000)); % play 'ready' tone
     disp('Ready, waiting for trigger...');
-    startTime = wait4T(tChar);  %wait for 't' from scanner.
+        
+    % Wait for trigger
+    target = 84; % 't' code
+    code = 1;
+    while ~ (length(code) == 1 && code == target)
+        Screen('FillRect',winPtr, grey);
+        Screen('DrawDots', winPtr, [0;0], fix_dot,black, center, 1);
+        Screen('Flip',winPtr);
+
+        [~, secs, keyCode, ~] = KbCheck;
+        code = find(keyCode);
+    end
+
+    startTime = secs;
 
     %% Drawing Loop
     breakIt                     = 0;
