@@ -162,10 +162,10 @@ try
         Screen('DrawDots', winPtr, [0;0], fix_dot,black, center, 1);
         Screen('Flip',winPtr);
 
-        [~, secs, keyCode, ~] = KbCheck;
+        [~, ~, keyCode, ~] = KbCheck;
         code = find(keyCode);
     end
-    startTime = secs;
+    startTime = GetSecs;
 
     %% Drawing Loop
     breakIt                     = 0;
