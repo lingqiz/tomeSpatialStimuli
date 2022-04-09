@@ -11,7 +11,7 @@ end
 
 %% Save info
 subName = 'PlaceHolder';
-sID = int(input(sprintf('Subject %s, enter Session ID:', subName)));
+sID = input(sprintf('Subject %s, enter Session ID:', subName));
 
 fName = strcat(subName, '_', num2str(sID), '.mat');
 savePath = fullfile('.', 'data', fName);
