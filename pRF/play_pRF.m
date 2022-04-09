@@ -165,7 +165,6 @@ try
         [~, secs, keyCode, ~] = KbCheck;
         code = find(keyCode);
     end
-
     startTime = secs;
 
     %% Drawing Loop
