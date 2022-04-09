@@ -14,8 +14,8 @@ function play_pRF(saveInfo, imagesFull, TR, scanDur, display, tChar, rChar)
 %   scanDur                 - 336: scan duration (seconds)
 %
 %   UPenn - SC3T
-%   display.distance        - 106.5; distance from screen (cm) 
-%   display.width           - 69.7347; width of screen (cm) 
+%   display.distance        - 106.5; distance from screen (cm)
+%   display.width           - 69.7347; width of screen (cm)
 %   display.height          - 39.2257; height of screen (cm)
 %
 %   tChar                   - {'t'}; character(s) to signal a scanner trigger
@@ -67,7 +67,7 @@ if a(1) == '/'
         d(i) = strcmp(a(i).usageName, 'Keyboard');
     end
     keybs = find(d);
-% windows
+    % windows
 else
     keybs = [];
 end
@@ -150,15 +150,15 @@ commandwindow;
 %% Run try/catch
 try
     %% Display Text, wait for Trigger
-    ListenChar(2);    
+    ListenChar(2);
     soundsc(sin(1:.5:1000)); % play 'ready' tone
     disp('Ready, waiting for trigger...');
-        
+    Screen('FillRect',winPtr, grey);
+
     % Wait for trigger
     target = 84; % 't' code
     code = 1;
     while ~ (length(code) == 1 && code == target)
-        Screen('FillRect',winPtr, grey);
         Screen('DrawDots', winPtr, [0;0], fix_dot,black, center, 1);
         Screen('Flip',winPtr);
 
@@ -223,7 +223,7 @@ try
     Screen('CloseAll');
 
     %% Save params
-    params.display = display;    
+    params.display = display;
     save(saveInfo.fileName, 'params', '-v7.3');
 
 catch ME
